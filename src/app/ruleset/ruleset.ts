@@ -30,9 +30,6 @@ const Pawn = new Piece(
         moves.push({ x: x, y: y + search*2 });
       }
     }
-
-
-
     return moves;
   },
   "Pawn"
@@ -224,7 +221,6 @@ const King = new Piece(
         } catch (error) {}
       }
     }
-   // console.log('kingmoves',moves)
     return moves;
   },
   "King"

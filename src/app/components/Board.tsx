@@ -25,7 +25,7 @@ const Board: React.FC = () => {
   const [turnState, setTurnState] = useState(true);
   const [pawnToUpgrade, setPawnToUpgrade] = useState<Cord | null>();
   const [pawnToEnPass, setPawntoEnPass] = useState<Cord | null>();
-  const [history,setHistory] = useState<String[]>()
+  const [history, setHistory] = useState<String[]>();
   const [blkKing, setBlkKing] = useState<KingStore>({
     cords: new Cord("light", r.King, "black", 4, 0),
     check: false,
@@ -39,150 +39,218 @@ const Board: React.FC = () => {
     cords: new Cord("light", r.King, "white", 4, 7),
     check: false,
   });
-  const [debug, setDebug] =useState(false)
+  const [debug, setDebug] = useState(false);
   const upgradeKey = {
     Bishop: <FaChessBishop />,
     Queen: <FaChessQueen />,
     Rook: <FaChessRook />,
     Knight: <FaChessKnight />,
   };
+
   function handleClick(tile: Cord) {
     if (pawnToUpgrade != null) {
       return;
     }
-    //lets player deselect piece by clicking an empty spot
-    if (!tile.highlighted) {
-      if(tile.piece.name == "None"){
-        let boardCopy = _.cloneDeep(realBoard!);
-        clearHighlights(boardCopy);
+    let clickedIsHighlighted = tile.highlighted;
+    let clickedPieceName = tile.piece.name;
+    let clickedPieceColor = tile.pieceColor;
+    let turnColor = turnState ? "white" : "black";
+    let boardCopy: Cord[][] = _.cloneDeep(realBoard!);
+    if (!clickedIsHighlighted) {
+      if (clickedPieceName == "None") {
+        boardCopy = clearHighlights(boardCopy);
         setRealBoard(boardCopy);
         return;
-      }
-      if(tile.pieceColor != (turnState?"white":"black")&&!debug){
+      } else if (clickedPieceColor != turnColor && !debug) {
         return;
+      } else {
+        boardCopy = handleHighlights(boardCopy, tile);
+        setRealBoard(boardCopy);
       }
+    } else {
+      handleHighlightedClick(boardCopy, tile);
     }
-    
-    let boardCopy: Cord[][] = [...realBoard!];
-
-    //needs seperate variable because we set new king cords and have to check them after in the same function
+  }
+  function handleHighlightedClick(boardCopy: Cord[][], tile: Cord) {
+    let clickedPieceName = tile.piece.name;
     let whiteK = { ...whtKing };
     let blackK = { ...blkKing };
-    let x = tile.x;
-    let y = tile.y;
-    if (boardCopy[y][x].highlighted) {
-      //checks that an en passant move has been played to remove backwards pawn. en passant should
-      //have already been validated during highlight function
-      if (
-        boardCopy[y][x].piece.name == "None" &&
-        boardCopy[y][x].x != hiPiece?.x &&
-        hiPiece?.piece.name == "Pawn"
-      ) {
-        boardCopy[y + (hiPiece.pieceColor == "white" ? 1 : -1)][x].piece =
-          r.None;
-      }
-      setPawntoEnPass(null);
-      //checks if a castle move has been played to move the rook aswell
-       if(hiPiece!.piece.name=="King"){
-        if(hiPiece!.x+2==tile.x){
-          boardCopy = castle(boardCopy,"right")
-        }
-        else if (hiPiece!.x-2==tile.x){
-          boardCopy = castle(boardCopy,"left")
-        }
-       }
-      boardCopy = movePiece(tile, boardCopy, hiPiece!);
-      //checking for pawn reaching en
-      if (
-        hiPiece?.piece.name == "Pawn" &&
-        tile.y == (hiPiece.pieceColor == "white" ? 0 : 7)
-      ) {
-        setPawnToUpgrade({ ...boardCopy[tile.y][tile.x] } as Cord);
-      }
-      //checking for pawn double move for possible en passant
-      if (
-        hiPiece?.piece.name == "Pawn" &&
-        tile.y == (hiPiece.pieceColor == "white" ? 4 : 3)&&hiPiece.y == (hiPiece.pieceColor == "white" ? 6 : 1                                      )
-      ) {
-        setPawntoEnPass(boardCopy[y][x]);
-      }
-      //setting rook to moved for castling variable
-      if(hiPiece?.piece.name == "Rook"){
-        let x = hiPiece.x
-        if (hiPiece.pieceColor == "black"&&(x==0||x==7)) {
-          x==0&&setCastleCon({...castleCon,black:{...castleCon.black,left:false}})
-          x==7&&setCastleCon({...castleCon,black:{...castleCon.black,right:false}})
-        }
-        else if(hiPiece.x==0||hiPiece.x==7) {
-          x==0&&setCastleCon({...castleCon,white:{...castleCon.white,left:false}})
-          x==7&&setCastleCon({...castleCon,white:{...castleCon.white,right:false}})
-        }
-      }
-      else if (hiPiece?.piece.name == "King") {
-        if (hiPiece.pieceColor == "black") {
-          setBlkKing({
-            ...blkKing,
-            cords: { ...boardCopy[tile.y][tile.x] } as Cord,
-          });
-          blackK = {
-            ...blkKing,
-            cords: { ...boardCopy[tile.y][tile.x] } as Cord,
-          };
-          setCastleCon({...castleCon,black:{...castleCon.black,king:false}})
-        }
-        if (hiPiece.pieceColor == "white") {
-          setWhtKing({
-            ...whtKing,
-            cords: { ...boardCopy[tile.y][tile.x] } as Cord,
-          });
-          whiteK = {
-            ...whtKing,
-            cords: { ...boardCopy[tile.y][tile.x] } as Cord,
-          };
-          setCastleCon({...castleCon,white:{...castleCon.white,king:false}})
-
-        }
-        //saves king cords for easy use when checking for mates
-        setHiPiece(null);
-      }
-    //end of move turn section
-     setHistory([...history?history:[],`${String.fromCharCode(97 + hiPiece!.x)+(hiPiece!.y+1)} => ${String.fromCharCode(97 + tile.x)+(tile.y+1)}`]) 
-    setTurnState(!turnState)
-
-      boardCopy = clearHighlights(boardCopy);
-      kingVerify(boardCopy, whiteK, blackK);
-      setHiPiece(null);
-    } else if (boardCopy[y][x].piece.name == "None") {
-      return;
-    } else {
-      boardCopy = clearHighlights(boardCopy);
-      setHiPiece({ ...tile } as Cord);
-      //gets the possible moves from the cord object
-      let possible = boardCopy![y][x].getPossibleMoves(boardCopy!);
-      //checking en passant possibility
-      if (isEnPassPossible({ ...tile } as Cord)) {
-        //adds en passant to move list, changing y based on color
-        possible.push({
-          x: pawnToEnPass?.x,
-          y: pawnToEnPass!.y + (tile.pieceColor == "white" ? -1 : +1),
-        });
-      }
-      if(tile.piece.name=="King"){
-        let moves = castleMoves(boardCopy,tile.pieceColor,tile,tile.pieceColor=="white"?whtKing:blkKing)
-        console.log(moves)
-        if(moves){
-         possible = [...possible, ...moves]}
-      }
-
-      //goes through each possible move and highlights them
-      boardCopy = highlightPieces(
-        possible,
-        boardCopy,
-        tile?.pieceColor == "white" ? whtKing : blkKing,
-        { ...tile } as Cord
-      );
+    let clickedTileIndex = tile.x;
+    let clickedRowIndex = tile.y;
+    let highlightedTileIndex = hiPiece?.x;
+    let highlightedRowIndex = hiPiece?.y;
+    let highlightedPieceColor = hiPiece?.pieceColor;
+    let highlightedPieceName = hiPiece?.piece.name;
+    let moveIsEnPassant =
+      clickedPieceName == "None" &&
+      clickedTileIndex != highlightedTileIndex &&
+      highlightedPieceName == "Pawn";
+    if (moveIsEnPassant) {
+      let enemyIndex =
+        clickedRowIndex + (highlightedPieceColor == "white" ? 1 : -1);
+      let enPassantPieceTakenCord = boardCopy[enemyIndex][clickedTileIndex];
+      enPassantPieceTakenCord.piece = r.None;
     }
+    setPawntoEnPass(null);
+    if (highlightedPieceName == "King") {
+      let kingMovedTwoSpacesRight =
+        highlightedTileIndex! + 2 == clickedTileIndex;
+      let kingMovedTwoSpacesLeft =
+        highlightedTileIndex! - 2 == clickedTileIndex;
+      if (kingMovedTwoSpacesRight) {
+        boardCopy = castle(boardCopy, "right");
+      } else if (kingMovedTwoSpacesLeft) {
+        boardCopy = castle(boardCopy, "left");
+      }
+    }
+    boardCopy = movePiece(tile, boardCopy, hiPiece!);
+    let endIndex = highlightedPieceColor == "white" ? 0 : 7;
+    let pawnReachedEnd =
+      highlightedPieceName == "Pawn" && clickedRowIndex == endIndex;
+      let startIndex = highlightedPieceColor == "white" ? 6 : 1;
+      let doubleMoveIndex = highlightedPieceColor == "white" ? 4 : 3;
+      let pawnDoubleMoved =
+      highlightedPieceName == "Pawn" &&
+      clickedRowIndex == doubleMoveIndex &&
+      highlightedRowIndex == startIndex;
+      if (pawnReachedEnd) {
+        setPawnToUpgrade({
+          ...boardCopy[clickedRowIndex][clickedTileIndex],
+        } as Cord);
+      }
+    else if (pawnDoubleMoved) {
+      setPawntoEnPass(boardCopy[clickedRowIndex][clickedTileIndex]);
+    } else if (highlightedPieceName == "Rook") {
+      updateRookState(highlightedTileIndex!, highlightedPieceColor!);
+    } else if (highlightedPieceName == "King") {
+      let clickedTile = boardCopy[clickedRowIndex][clickedTileIndex];
+      let update = updateKingState(_.cloneDeep(whiteK), _.cloneDeep(blackK), clickedTile, highlightedPieceColor!);
+      whiteK = update.whiteK
+      blackK = update.blackK
+    }
+    let startPosition =
+      String.fromCharCode(97 + highlightedTileIndex!) +
+      (highlightedRowIndex! + 1);
+    let endPosition =
+      String.fromCharCode(97 + clickedTileIndex) + (clickedRowIndex + 1);
+    //end of move turn section
+    setHistory([
+      ...(history ? history : []),
+      `${startPosition} => ${endPosition}`,
+    ]);
+    setTurnState(!turnState);
+    boardCopy = clearHighlights(boardCopy);
+    kingVerify(boardCopy, whiteK, blackK);
+    setHiPiece(null);
     setRealBoard(boardCopy);
+  }
+  //highlights during click event different function than highlighting board given
+  function handleHighlights(boardCopy: Cord[][], tile: Cord) {
+    let clickedRowIndex = tile.y;
+    let clickedTileIndex = tile.x;
+    boardCopy = clearHighlights(boardCopy);
+    setHiPiece({ ...tile } as Cord);
+    //gets the possible moves from the cord object
+    let possible = boardCopy![clickedRowIndex][
+      clickedTileIndex
+    ].getPossibleMoves(boardCopy!);
+    //checking en passant possibility
+    if (isEnPassPossible({ ...tile } as Cord)) {
+      //adds en passant to move list, changing y based on color
+      possible.push({
+        x: pawnToEnPass?.x,
+        y: pawnToEnPass!.y + (tile.pieceColor == "white" ? -1 : +1),
+      });
+    }
+    if (tile.piece.name == "King") {
+      let moves = castleMoves(
+        boardCopy,
+        tile.pieceColor,
+        tile,
+        tile.pieceColor == "white" ? whtKing : blkKing
+      );
+      if (moves) {
+        possible = [...possible, ...moves];
+      }
+    }
+
+    //goes through each possible move and highlights them
+    boardCopy = highlightPieces(
+      possible,
+      boardCopy,
+      tile?.pieceColor == "white" ? whtKing : blkKing,
+      { ...tile } as Cord
+    );
+    return boardCopy;
+  }
+  function updateKingState(
+    whiteK: KingStore,
+    blackK: KingStore,
+    clickedTile: Cord,
+    highlightedPieceColor: string
+  ) {
+    if (highlightedPieceColor == "black") {
+      setBlkKing({
+        ...blkKing,
+        cords: { ...clickedTile } as Cord,
+      });
+      blackK = {
+        ...blkKing,
+        cords: { ...clickedTile } as Cord,
+      };
+      setCastleCon({
+        ...castleCon,
+        black: { ...castleCon.black, king: false },
+      });
+    }
+    if (highlightedPieceColor == "white") {
+      setWhtKing({
+        ...whtKing,
+        cords: { ...clickedTile } as Cord,
+      });
+      whiteK = {
+        ...whtKing,
+        cords: { ...clickedTile } as Cord,
+      };
+      setCastleCon({
+        ...castleCon,
+        white: { ...castleCon.white, king: false },
+      });
+    }
+    setHiPiece(null);
+    return {whiteK,blackK}
+  }
+  function updateRookState(
+    highlightedTileIndex: number,
+    highlightedPieceColor: string
+  ) {
+    let rookInStartingPosition =
+      highlightedTileIndex == 0 || highlightedTileIndex == 7;
+    let rookInLeftPosition = highlightedTileIndex == 0;
+    let rookInRightPosition = highlightedTileIndex == 7;
+    if (highlightedPieceColor == "black" && rookInStartingPosition) {
+      rookInLeftPosition &&
+        setCastleCon({
+          ...castleCon,
+          black: { ...castleCon.black, left: false },
+        });
+      rookInRightPosition &&
+        setCastleCon({
+          ...castleCon,
+          black: { ...castleCon.black, right: false },
+        });
+    } else if (rookInStartingPosition) {
+      rookInLeftPosition &&
+        setCastleCon({
+          ...castleCon,
+          white: { ...castleCon.white, left: false },
+        });
+      rookInRightPosition &&
+        setCastleCon({
+          ...castleCon,
+          white: { ...castleCon.white, right: false },
+        });
+    }
   }
   //checks for check mates and checks for red highlighting and winning the game
   function kingVerify(
@@ -216,17 +284,24 @@ const Board: React.FC = () => {
     kingVerify(boardCopy, whtKing, blkKing);
   }
   //moves the rook piece in case of a castle
-  function castle(boardCopy:Cord[][],direction:string){
-    if(direction == "left"){
-         boardCopy = movePiece(boardCopy[hiPiece!.y][hiPiece!.x-1],boardCopy,boardCopy[hiPiece!.y][hiPiece!.x-4])
+  function castle(boardCopy: Cord[][], direction: string) {
+    if (direction == "left") {
+      boardCopy = movePiece(
+        boardCopy[hiPiece!.y][hiPiece!.x - 1],
+        boardCopy,
+        boardCopy[hiPiece!.y][hiPiece!.x - 4]
+      );
+    } else {
+      boardCopy = movePiece(
+        boardCopy[hiPiece!.y][hiPiece!.x + 1],
+        boardCopy,
+        boardCopy[hiPiece!.y][hiPiece!.x + 3]
+      );
     }
-    else{
-      boardCopy = movePiece(boardCopy[hiPiece!.y][hiPiece!.x+1],boardCopy,boardCopy[hiPiece!.y][hiPiece!.x+3])
-    }
-    return boardCopy
+    return boardCopy;
   }
   //checks if en passant is possible
-  function isEnPassPossible( tile: Cord) {
+  function isEnPassPossible(tile: Cord) {
     if (
       tile.piece.name == "Pawn" &&
       pawnToEnPass &&
@@ -311,8 +386,8 @@ const Board: React.FC = () => {
   }
 
   function makeNew() {
-    setHistory([])
-    setTurnState(true)
+    setHistory([]);
+    setTurnState(true);
     setWhtKing({
       cords: new Cord("light", r.King, "white", 4, 7),
       check: false,
@@ -375,13 +450,7 @@ const Board: React.FC = () => {
     y++;
     for (let x = 0; x < 8; x++) {
       row.push(
-        new Cord(
-          (x + y) % 2 == 0 ? "light" : "dark",
-          order[x],
-          "white",
-          x,
-          y
-        )
+        new Cord((x + y) % 2 == 0 ? "light" : "dark", order[x], "white", x, y)
       );
     }
     newBoard.push(row);
@@ -399,52 +468,94 @@ const Board: React.FC = () => {
     }
     return boardCopy;
   }
-  function castleMoves(boardCopy: Cord[][], pieceColor: string,tile:Cord,king:KingStore) {
+  function castleMoves(
+    boardCopy: Cord[][],
+    pieceColor: string,
+    tile: Cord,
+    king: KingStore
+  ) {
     //setting color variable
-    let side = castleCon[pieceColor as keyof typeof castleCon]
+    let side = castleCon[pieceColor as keyof typeof castleCon];
     //Castle cannot occur if in check or if king has moved
-    if(king.check||!side.king)return []
+    if (king.check || !side.king) return [];
     //moves to be returned
-    let moves = []
+    let moves = [];
     //left rook hasnt moved yet
-    if(side.left){
+    if (side.left) {
       //both tiles must be empty
-      if(boardCopy[tile.y][tile.x-1].piece.name=="None"&&boardCopy[tile.y][tile.x-2].piece.name=="None"){
-       //king not allowed to move through a check when moving double spaces, first checks for check
+      if (
+        boardCopy[tile.y][tile.x - 1].piece.name == "None" &&
+        boardCopy[tile.y][tile.x - 2].piece.name == "None"
+      ) {
+        //king not allowed to move through a check when moving double spaces, first checks for check
         //in one move then two
-        let checkSearch = _.cloneDeep(boardCopy)
-        checkSearch = movePiece(checkSearch[tile.y][tile.x-1],checkSearch,checkSearch[tile.y][tile.x])
-        let check = isCheck(checkSearch,pieceColor,checkSearch[tile.y][tile.x-1])
-        if(!check){
-          let checkSearch = _.cloneDeep(boardCopy)
-        checkSearch = movePiece(checkSearch[tile.y][tile.x-2],checkSearch,checkSearch[tile.y][tile.x])
-        check = isCheck(checkSearch,pieceColor,checkSearch[tile.y][tile.x-2])
+        let checkSearch = _.cloneDeep(boardCopy);
+        checkSearch = movePiece(
+          checkSearch[tile.y][tile.x - 1],
+          checkSearch,
+          checkSearch[tile.y][tile.x]
+        );
+        let check = isCheck(
+          checkSearch,
+          pieceColor,
+          checkSearch[tile.y][tile.x - 1]
+        );
+        if (!check) {
+          let checkSearch = _.cloneDeep(boardCopy);
+          checkSearch = movePiece(
+            checkSearch[tile.y][tile.x - 2],
+            checkSearch,
+            checkSearch[tile.y][tile.x]
+          );
+          check = isCheck(
+            checkSearch,
+            pieceColor,
+            checkSearch[tile.y][tile.x - 2]
+          );
         }
         //if both cases pass as not checking the king
-        !check&&moves.push( {x:tile.x-2,y:tile.y})
-
+        !check && moves.push({ x: tile.x - 2, y: tile.y });
       }
     }
     //right rook hasnt moved yet
-    if(side.right){
+    if (side.right) {
       //both tiles must be empty
-      if(boardCopy[tile.y][tile.x+1].piece.name=="None"&&boardCopy[tile.y][tile.x+2].piece.name=="None"){
+      if (
+        boardCopy[tile.y][tile.x + 1].piece.name == "None" &&
+        boardCopy[tile.y][tile.x + 2].piece.name == "None"
+      ) {
         //king not allowed to move through a check when moving double spaces, first checks for check
         //in one move then two
-        let checkSearch = _.cloneDeep(boardCopy)
-        checkSearch = movePiece(checkSearch[tile.y][tile.x+1],checkSearch,checkSearch[tile.y][tile.x])
-        let check = isCheck(checkSearch,pieceColor,checkSearch[tile.y][tile.x+1])
-        if(!check){
-          let checkSearch = _.cloneDeep(boardCopy)
-        checkSearch = movePiece(checkSearch[tile.y][tile.x+2],checkSearch,checkSearch[tile.y][tile.x])
-        check = isCheck(checkSearch,pieceColor,checkSearch[tile.y][tile.x+2])
+        let checkSearch = _.cloneDeep(boardCopy);
+        checkSearch = movePiece(
+          checkSearch[tile.y][tile.x + 1],
+          checkSearch,
+          checkSearch[tile.y][tile.x]
+        );
+        let check = isCheck(
+          checkSearch,
+          pieceColor,
+          checkSearch[tile.y][tile.x + 1]
+        );
+        if (!check) {
+          let checkSearch = _.cloneDeep(boardCopy);
+          checkSearch = movePiece(
+            checkSearch[tile.y][tile.x + 2],
+            checkSearch,
+            checkSearch[tile.y][tile.x]
+          );
+          check = isCheck(
+            checkSearch,
+            pieceColor,
+            checkSearch[tile.y][tile.x + 2]
+          );
         }
         //if both cases pass as not checking the king
-        !check&&moves.push( {x:tile.x+2,y:tile.y})
+        !check && moves.push({ x: tile.x + 2, y: tile.y });
       }
     }
-    
-    return moves
+
+    return moves;
   }
   function isCheck(boardCopy: Cord[][], pieceColor: string, king: Cord) {
     let queenMoves = r.Queen.getRules();
@@ -477,91 +588,117 @@ const Board: React.FC = () => {
   return (
     <>
       <div className={styles["button-container"]}>
-
-      
-    
-    <div>{turnState?"White's":"Black's"} Turn {debug&& "* DEBUG"}</div>
-      <button
-        onClick={() => console.log("Board", realBoard, "Selected", hiPiece)}
-      >
-        Debug Info
-      </button>
-      <button onClick={()=>{setDebug(!debug)}}>Debug Move</button>
-      <button onClick={() => makeNew()}>New Board</button>
+        <div>
+          {turnState ? "White's" : "Black's"} Turn {debug && "* DEBUG"}
+        </div>
+        <button
+          onClick={() => console.log("Board", realBoard, "Selected", hiPiece)}
+        >
+          Debug Info
+        </button>
+        <button
+          onClick={() => {
+            setDebug(!debug);
+          }}
+        >
+          Debug Move
+        </button>
+        <button onClick={() => makeNew()}>New Board</button>
       </div>
       <div className={styles["board-container" as keyof typeof styles]}>
-      <div className={styles.column}>
-      <div className={styles.row}>
-        <div style={{backgroundColor:"rgb(168, 165, 165)"}} className={styles.tile}></div>
-        {["A","B","C","D","E","F","G","H"].map((cord,key)=>(
-          <div key={key} style={{color:"white",backgroundColor:key%2?"rgb(168, 165, 165)":"rgb(140, 140, 140)",}} className={styles.tile}>{cord}</div>
-)
-        )}
-</div>
-        {realBoard?.map((row: Cord[], index) => (
-          <div key={index} className={styles.row}>
-          <div style={{color:"white",backgroundColor:index%2?"rgb(168, 165, 165)":"rgb(140, 140, 140)",}} className={styles.tile}>{index+1}</div>
-            {row.map((tile: Cord, index) => (
+        <div className={styles.column}>
+          <div className={styles.row}>
+            <div
+              style={{ backgroundColor: "rgb(168, 165, 165)" }}
+              className={styles.tile}
+            ></div>
+            {["A", "B", "C", "D", "E", "F", "G", "H"].map((cord, key) => (
               <div
-                key={index}
-                onClick={() => handleClick(tile)}
-                className={styles.tile}
+                key={key}
                 style={{
-                  color: tile.pieceColor,
-                  cursor: "pointer",
+                  color: "white",
                   backgroundColor:
-                    (whtKing.check &&
-                      tile.x == whtKing.cords.x &&
-                      tile.y == whtKing.cords.y) ||
-                    (blkKing.check &&
-                      tile.x == blkKing.cords.x &&
-                      tile.y == blkKing.cords.y)
-                      ? "rgb(255, 82, 90)"
-                      : tile.highlighted
-                      ? "rgb(101, 197, 252)"
-                      : tile.tileColor == "light"
-                      ? "rgb(255, 206, 153)"
-                      : "rgb(77, 48, 17)",
+                    key % 2 ? "rgb(168, 165, 165)" : "rgb(140, 140, 140)",
                 }}
+                className={styles.tile}
               >
-                {tile.piece.name != "None" &&
-                  {
-                    Pawn: <FaChessPawn />,
-                    Bishop: <FaChessBishop />,
-                    King: <FaChessKing />,
-                    Queen: <FaChessQueen />,
-                    Rook: <FaChessRook />,
-                    Knight: <FaChessKnight />,
-                  }[tile.piece.name]}
+                {cord}
               </div>
             ))}
           </div>
-        ))}
-      </div>
-
-      {pawnToUpgrade && (
-        <div
-        className={styles.upgrade}
-        >
-          {Object.keys(upgradeKey).map((key, index) => (
-            <div
-              onClick={() => upgradePawn(key)}
-              style={{
-                cursor:"pointer",
-                color: pawnToUpgrade.pieceColor,
-              }}
-              key={index}
-            >
-              {upgradeKey[key as keyof typeof upgradeKey]}
+          {realBoard?.map((row: Cord[], index) => (
+            <div key={index} className={styles.row}>
+              <div
+                style={{
+                  color: "white",
+                  backgroundColor:
+                    index % 2 ? "rgb(168, 165, 165)" : "rgb(140, 140, 140)",
+                }}
+                className={styles.tile}
+              >
+                {index + 1}
+              </div>
+              {row.map((tile: Cord, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleClick(tile)}
+                  className={styles.tile}
+                  style={{
+                    color: tile.pieceColor,
+                    cursor: "pointer",
+                    backgroundColor:
+                      (whtKing.check &&
+                        tile.x == whtKing.cords.x &&
+                        tile.y == whtKing.cords.y) ||
+                      (blkKing.check &&
+                        tile.x == blkKing.cords.x &&
+                        tile.y == blkKing.cords.y)
+                        ? "rgb(255, 82, 90)"
+                        : tile.highlighted
+                        ? "rgb(101, 197, 252)"
+                        : tile.tileColor == "light"
+                        ? "rgb(255, 206, 153)"
+                        : "rgb(77, 48, 17)",
+                  }}
+                >
+                  {tile.piece.name != "None" &&
+                    {
+                      Pawn: <FaChessPawn />,
+                      Bishop: <FaChessBishop />,
+                      King: <FaChessKing />,
+                      Queen: <FaChessQueen />,
+                      Rook: <FaChessRook />,
+                      Knight: <FaChessKnight />,
+                    }[tile.piece.name]}
+                </div>
+              ))}
             </div>
           ))}
         </div>
-      )}
-      <div className={styles.history}>
-              <h2>Move History</h2>
-      {history?.map((move,key)=>(
-        <p>{key+1}. {move}</p>
-        ))}
+
+        {pawnToUpgrade && (
+          <div className={styles.upgrade}>
+            {Object.keys(upgradeKey).map((key, index) => (
+              <div
+                onClick={() => upgradePawn(key)}
+                style={{
+                  cursor: "pointer",
+                  color: pawnToUpgrade.pieceColor,
+                }}
+                key={index}
+              >
+                {upgradeKey[key as keyof typeof upgradeKey]}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className={styles.history}>
+          <h2>Move History</h2>
+          {history?.map((move, key) => (
+            <p>
+              {key + 1}. {move}
+            </p>
+          ))}
         </div>
       </div>
     </>
