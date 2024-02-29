@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Overpass } from "next/font/google";
 import "./globals.css";
+import { IconContext } from "react-icons";
 
 const inter = Overpass({ subsets: ["latin"] });
 
@@ -16,7 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+        {/* <IconContext.Provider value={{ style: { height:"3em",width:"3em" } }}> */}
+
       <body className={inter.className}>{children}</body>
+        {/* </IconContext.Provider> */}
     </html>
   );
 }

@@ -46,7 +46,8 @@ export function isMoveLegal(boardInfo:BoardInfo,turn:string,move:Move,castleCond
   //gets the possible moves from the cord object
   let isPawn = start.piece.name == "Pawn"
   let end = start.pieceColor=="white"?0:7  
-  if(isPawn&&end&&move.upgrade==null){
+  if(isPawn&&move.end.y==end&&move.upgrade==null){
+    console.log('shouldnt be here')
     return false
   }else if(isPawn&&end){
     let validUpgrades = ["Queen","Bishop","Rook","Knight"]

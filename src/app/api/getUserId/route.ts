@@ -35,7 +35,6 @@ export async function GET() {
 
             let data = await supabase.from("Players").update({white:session_id}).eq("id",game_id)
             color = "white"
-            console.log('userdata',data)
         }else{
             session_id =randomUUID()
             let data = await supabase.from("Players").update({black:session_id}).eq("id",game_id)

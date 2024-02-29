@@ -19,7 +19,9 @@ export async function GET() {
             },
           }
       )
-      let data = await supabase.from("Sessions").insert({last_move:[]}).select()
+      let data = await supabase.from("Sessions").insert({turn:"white",moves:[]}).select()
+      let id = data!.data![0].id
+      let player = await supabase.from("Players").insert({id:id}).select()
      
-    return Response.json({message:data!.data![0].id})
+    return Response.json({game_id:id})
   }

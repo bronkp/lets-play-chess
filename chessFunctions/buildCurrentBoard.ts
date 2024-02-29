@@ -20,51 +20,65 @@ export function buildCurrentBoard(moves: Move[]) {
   let castleConditions = {
     black: { left: true, king: true, right: true },
     white: { left: true, king: true, right: true },
-  }
-  if (moves.length){
-  for (let i = 0; i < moves.length; i++) {
-    let move = moves[i]
-    let movedPiece = board[move.start.y][move.start.x]
-    if (movedPiece.piece.name=="King"){
-        castleConditions[movedPiece.pieceColor as keyof typeof castleConditions].king = false
-    }
-    else if(movedPiece.piece.name=="Rook"){
-        if(movedPiece.x==0){
-            castleConditions[movedPiece.pieceColor as keyof typeof castleConditions].left = false
+  };
+  if (moves.length) {
+    for (let i = 0; i < moves.length; i++) {
+      let move = moves[i];
+      let movedPiece = board[move.start.y][move.start.x];
+      if (movedPiece.piece.name == "King") {
+        castleConditions[
+          movedPiece.pieceColor as keyof typeof castleConditions
+        ].king = false;
+      } else if (movedPiece.piece.name == "Rook") {
+        if (movedPiece.x == 0) {
+          castleConditions[
+            movedPiece.pieceColor as keyof typeof castleConditions
+          ].left = false;
+        } else if (movedPiece.x == 7) {
+          castleConditions[
+            movedPiece.pieceColor as keyof typeof castleConditions
+          ].right = false;
         }
-        else if(movedPiece.x==7){
-            castleConditions[movedPiece.pieceColor as keyof typeof castleConditions].right = false
+      }
+
+      postMoveBoardDetails = forceMove(
+        _.cloneDeep(board),
+        move,
+        whiteKing,
+        blackKing
+      );
+      board = postMoveBoardDetails.board;
+      let isWhite = movedPiece.pieceColor == "white" ? true : false;
+      let moveIsKing = movedPiece.piece.name == "King";
+      let endCord = board[move.end.y][move.end.x]
+      let check = isCheck(board, "white", whiteKing.cords);
+      check ? (whiteKing.check = true) : (whiteKing.check = false);
+      check = isCheck(board, "black", blackKing.cords);
+      check ? (blackKing.check = true) : (blackKing.check = false);
+
+      if (moveIsKing) {
+        if (isWhite) {
+          let check = isCheck(board, "white", endCord);
+          check ? (whiteKing.check = true) : (whiteKing.check = false);
+          postMoveBoardDetails.whiteKing.cords = endCord
+        } else {
+          let check = isCheck(board, "white", endCord);
+          check ? (blackKing.check = true) : (whiteKing.check = false);
+          postMoveBoardDetails.blackKing.cords = endCord
 
         }
+      }
     }
-    
-    
-    postMoveBoardDetails = forceMove(
-      _.cloneDeep(board),
-      move,
-      whiteKing,
-      blackKing
-    );
-    board = postMoveBoardDetails.board;
-    let color = movedPiece.pieceColor=="white"?"black":"white"
-    let king = movedPiece.pieceColor=="white"?blackKing:whiteKing
-    
-    let check = isCheck(board,"white",whiteKing.cords)
-    check?whiteKing.check=true:whiteKing.check=false
-    console.log(check,'here')
-     check = isCheck(board,"black",blackKing.cords)
-    check?blackKing.check=true:blackKing.check=false
-
-  }}else{
-    postMoveBoardDetails={
-        board:board,
-        whiteKing:whiteKing,
-        blackKing:blackKing,
-        pawnToEnPassant: null,
-    }
+  } else {
+    postMoveBoardDetails = {
+      board: board,
+      whiteKing: whiteKing,
+      blackKing: blackKing,
+      pawnToEnPassant: null,
+    };
   }
-  console.log("recieved king",postMoveBoardDetails?.blackKing.check)
-  return {postMoveBoardDetails, castleConditions};
+  console.log("recieved king", postMoveBoardDetails?.blackKing.check);
+  return { postMoveBoardDetails, castleConditions };
 }
 function forceMove(
   board: Cord[][],
@@ -83,8 +97,8 @@ function forceMove(
   }
   board = movePiece(_.cloneDeep(board), start, end);
   //Pawn to Upgrade
-  if(move.upgrade){
-board[move.end.y][move.end.x].piece = r[move.upgrade as keyof typeof r]
+  if (move.upgrade) {
+    board[move.end.y][move.end.x].piece = r[move.upgrade as keyof typeof r];
   }
   let pawnToEnPassant = null;
   return {

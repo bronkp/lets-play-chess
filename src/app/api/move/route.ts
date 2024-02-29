@@ -54,7 +54,6 @@ export async function GET() {
     let pawnToUpgrade
     let isEnd = move.end.y == end
     let upgrade = headers().get('pawnUpgrade')
-    console.log(upgrade)
     if(isPawn&&isEnd&&upgrade==null){
       return Response.json({error:"Pawn move did not come with upgrade key"})
     }else if(isPawn&&isEnd){
@@ -69,6 +68,9 @@ export async function GET() {
       if(legal){
         moves.push(move!)
         let response = await supabase.from("Sessions").update({moves:moves,turn:turn=="white"?"black":"white"}).eq("id",game_id)
+      }else{
+      return Response.json({error:"Move is not legal, if you believe this is a bug contact me."})
+
       }
 
 
@@ -82,7 +84,6 @@ export async function GET() {
 
     //let data = await supabase.from("Sessions").update({last_move:JSON.parse(move!)}).eq("id",game_id)
     let user = await supabase.from("Sessions")
-    console.log(move)
     
     return Response.json({message:game_data})
         }

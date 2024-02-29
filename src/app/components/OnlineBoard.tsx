@@ -851,6 +851,30 @@ async function getUserId(){
  
 }
 useEffect(()=>{getUserId()},[])
+
+async function cheat(){
+  let data = await fetch("/api/move", {
+    headers: {
+      userId:userId,
+      game_id: params.game_id,
+      pawnUpgrade: null,
+      turn: "white",
+      move: JSON.stringify({
+        end: {
+          x: 2,
+          y: 7,
+        },
+        start: {
+          x: 4,
+          y: 7,
+        },
+      }),
+    },
+  }).then((body) => {
+    return body.json();
+  });
+  console.log(data)
+}
   return (
     <>
       <div className={styles["button-container"]}>
@@ -862,6 +886,7 @@ useEffect(()=>{getUserId()},[])
         >
           Debug Info
         </button>
+        <button onClick={()=>{cheat()}}>Cheat</button>
         <button
           onClick={() => {
             setDebug(!debug);
@@ -874,12 +899,13 @@ useEffect(()=>{getUserId()},[])
       </div>
       <div className={styles["board-container" as keyof typeof styles]}>
         <div className={styles.column}>
+          
           <div className={styles.row}>
             <div
               style={{ backgroundColor: "rgb(168, 165, 165)" }}
               className={styles.tile}
             ></div>
-            {["A", "B", "C", "D", "E", "F", "G", "H"].map((cord, key) => (
+            {(userColor=="white"? ["A", "B", "C", "D", "E", "F", "G", "H"]:["A", "B", "C", "D", "E", "F", "G", "H"].reverse()).map((cord, key) => (
               <div
                 key={key}
                 style={{
@@ -894,7 +920,8 @@ useEffect(()=>{getUserId()},[])
             ))}
           </div>
           {realBoard &&
-            realBoard?.map((row: Cord[], index) => (
+          (userColor=="white"? realBoard:_.cloneDeep(realBoard).reverse())
+           ?.map((row: Cord[], index) => (
               <div key={index} className={styles.row}>
                 <div
                   style={{
@@ -904,9 +931,9 @@ useEffect(()=>{getUserId()},[])
                   }}
                   className={styles.tile}
                 >
-                  {index + 1}
+                  {userColor=="white"?index + 1:8-index}
                 </div>
-                {row.map((tile: Cord, index) => (
+                {(userColor=="white"? row:_.cloneDeep(row).reverse()) .map((tile: Cord, index) => (
                   <div
                     key={index}
                     onClick={() => handleClick(realBoard, tile, hiPiece)}
