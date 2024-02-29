@@ -8,7 +8,7 @@ import { isCheck } from "./isCheck";
 
 export function buildCurrentBoard(moves: Move[]) {
   let board = makeBoard();
-  let postMoveBoardDetails;
+  let postBoardBuildDetails;
   let whiteKing = {
     cords: new Cord("dark", r.King, "white", 4, 7),
     check: false,
@@ -41,13 +41,13 @@ export function buildCurrentBoard(moves: Move[]) {
         }
       }
 
-      postMoveBoardDetails = forceMove(
+      postBoardBuildDetails = forceMove(
         _.cloneDeep(board),
         move,
         whiteKing,
         blackKing
       );
-      board = postMoveBoardDetails.board;
+      board = postBoardBuildDetails.board;
       let isWhite = movedPiece.pieceColor == "white" ? true : false;
       let moveIsKing = movedPiece.piece.name == "King";
       let endCord = board[move.end.y][move.end.x]
@@ -60,25 +60,24 @@ export function buildCurrentBoard(moves: Move[]) {
         if (isWhite) {
           let check = isCheck(board, "white", endCord);
           check ? (whiteKing.check = true) : (whiteKing.check = false);
-          postMoveBoardDetails.whiteKing.cords = endCord
+          postBoardBuildDetails.whiteKing.cords = endCord
         } else {
           let check = isCheck(board, "white", endCord);
           check ? (blackKing.check = true) : (whiteKing.check = false);
-          postMoveBoardDetails.blackKing.cords = endCord
+          postBoardBuildDetails.blackKing.cords = endCord
 
         }
       }
     }
   } else {
-    postMoveBoardDetails = {
+    postBoardBuildDetails = {
       board: board,
       whiteKing: whiteKing,
       blackKing: blackKing,
       pawnToEnPassant: null,
     };
   }
-  console.log("recieved king", postMoveBoardDetails?.blackKing.check);
-  return { postMoveBoardDetails, castleConditions };
+  return {  postBoardBuildDetails, castleConditions };
 }
 function forceMove(
   board: Cord[][],

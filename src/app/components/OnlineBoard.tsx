@@ -14,6 +14,7 @@ import {
 import { supabase } from "../../../supa/client";
 import { buildCurrentBoard } from "../../../chessFunctions/buildCurrentBoard";
 import { error } from "console";
+import { simpleMove } from "../../../chessFunctions/simpleMove";
 type KingStore = {
   cords: Cord;
   check: Boolean;
@@ -32,7 +33,8 @@ type BoardProps = {
 const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   const [hiPiece, setHiPiece] = useState<Cord | null>();
   const [turnState, setTurnState] = useState(true);
-  const [pawnToUpgrade, setPawnToUpgrade] = useState<Cord | null>();
+  const [checkMate,setCheckMate] = useState("")
+  const [pawnToUpgrade, setPawnToUpgrade] = useState<LastMove>();
   const [pawnToEnPass, setPawntoEnPass] = useState<Cord | null>();
   const [history, setHistory] = useState<String[]>();
   const [userColor,setUserColor]=useState()
@@ -86,22 +88,25 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }
   }
   async function sendUpgradeMove(key:string){
-    let start = pawnToUpgrade.start
-    let end = pawnToUpgrade.end
+    let start = pawnToUpgrade?.start
+    let end = pawnToUpgrade?.end
     console.log(key)
     let valid  = await sendMove( start, end, key);
     //TODO add upgrade function to handleHighlightedClick
     valid &&handleHighlightedClick(_.cloneDeep(realBoard), end, start);
+    setPawnToUpgrade(null)
   }
   async function handleMoveAttempt(tile:Cord,hiPiece:Cord,boardCopy:Cord[][]){
     let isPawn = hiPiece.piece.name == "Pawn"
     let end = hiPiece.pieceColor=="white"?0:7
     let isEnd = tile.y == end
     if(isPawn&&isEnd){
+      console.log('end')
       setPawnToUpgrade({start:hiPiece,end:tile})
+      setRealBoard(preUpgradeVisual(_.cloneDeep(realBoard),hiPiece,tile))
     }else{
       let valid  = await sendMove(hiPiece, tile,null);
-      valid &&handleHighlightedClick(boardCopy, tile, hiPiece);
+      //valid &&handleHighlightedClick(boardCopy, tile, hiPiece);
     }
   }
 
@@ -755,9 +760,10 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       setWhtKing(board?.whiteKing)
       setBlkKing(board?.blackKing)
       let moves = board.moves
-    
-      let moveHistory = formatHistory(moves)
-      setHistory(moveHistory)
+      if(moves){
+        let moveHistory = formatHistory(moves)
+        setHistory(moveHistory)
+      }
 
     } else {
       makeNew();
@@ -816,14 +822,15 @@ function handleIncomingMove(sessionData){
   let moves = sessionData.moves  as LastMove[]
   let moveHistory = formatHistory(moves)
   setHistory(moveHistory)
-  let {postMoveBoardDetails,castleConditions}= buildCurrentBoard(moves)
+  let {postBoardBuildDetails,castleConditions}= buildCurrentBoard(moves)
   setCastleCon(castleCon)
-  let board = postMoveBoardDetails.board
-  console.log(postMoveBoardDetails?.blackKing)
-  setWhtKing(postMoveBoardDetails?.whiteKing)
-  setBlkKing(postMoveBoardDetails?.blackKing)
+  let board = postBoardBuildDetails.board
+  console.log(postBoardBuildDetails?.blackKing)
+  setWhtKing(postBoardBuildDetails?.whiteKing)
+  setBlkKing(postBoardBuildDetails?.blackKing)
   setRealBoard(board)
   setTurn(sessionData.turn)
+  setCheckMate(sessionData.mate)
 
 }
 async function getUserId(){
@@ -875,8 +882,14 @@ async function cheat(){
   });
   console.log(data)
 }
+function preUpgradeVisual(board:Cord[][],start:Cord,end:Cord){
+  board = simpleMove(board,start,end)
+  board = clearHighlights(board)
+  return board
+}
   return (
     <>
+    {pawnToUpgrade?.end!.x!} {pawnToUpgrade?.end!.y!}
       <div className={styles["button-container"]}>
         <div>
           {turn == "white" ? "White's" : "Black's"} Turn {debug && "* DEBUG"}
@@ -896,10 +909,11 @@ async function cheat(){
         </button>
         {/* <button onClick={() => makeNew()}>New Board</button> */}
         <p>{userId}</p>
+        {checkMate&&<h1>Game Over: {checkMate=="white"?"Black":"White"} Has Won</h1>}
+          <h1>{userColor==turn?"Your Turn":"Opponent's Turn"}</h1>
       </div>
       <div className={styles["board-container" as keyof typeof styles]}>
         <div className={styles.column}>
-          
           <div className={styles.row}>
             <div
               style={{ backgroundColor: "rgb(168, 165, 165)" }}
@@ -936,12 +950,13 @@ async function cheat(){
                 {(userColor=="white"? row:_.cloneDeep(row).reverse()) .map((tile: Cord, index) => (
                   <div
                     key={index}
-                    onClick={() => handleClick(realBoard, tile, hiPiece)}
+                    onClick={() => {!checkMate&&!pawnToUpgrade&&handleClick(realBoard, tile, hiPiece)}}
                     className={styles.tile}
                     style={{
                       color: tile.pieceColor,
                       cursor: "pointer",
                       backgroundColor:
+                      pawnToUpgrade?.end.x==tile.x&&pawnToUpgrade.end.y==tile.y?"green":
                         (whtKing.check &&
                           tile.x == whtKing.cords.x &&
                           tile.y == whtKing.cords.y) ||
@@ -978,7 +993,7 @@ async function cheat(){
                 onClick={() => sendUpgradeMove(key)}
                 style={{
                   cursor: "pointer",
-                  color: pawnToUpgrade.pieceColor,
+                  color: userColor,
                 }}
                 key={index}
               >

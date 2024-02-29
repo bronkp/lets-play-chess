@@ -33,10 +33,10 @@ export async function GET() {
     let blackKing
     if(moves){
 
-        let {postMoveBoardDetails,castleConditions}= buildCurrentBoard(moves)
-        board = postMoveBoardDetails?.board
-        whiteKing = postMoveBoardDetails?.whiteKing
-        blackKing = postMoveBoardDetails?.blackKing
+        let { postBoardBuildDetails,castleConditions}= buildCurrentBoard(moves)
+        board = postBoardBuildDetails?.board
+        whiteKing = postBoardBuildDetails?.whiteKing
+        blackKing = postBoardBuildDetails?.blackKing
     }
     return Response.json({board:board,turn:turn,whiteKing:whiteKing,blackKing:blackKing,moves:moves})
         }
