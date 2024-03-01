@@ -2,7 +2,6 @@ import Cord from "@/app/classes/Cord";
 import { makeBoard } from "./makeBoard";
 import * as r from "../src/app/ruleset/ruleset";
 import _ from "lodash";
-import Board from "@/app/components/Board";
 import { BoardInfo, KingStore, Move } from "../types/types";
 import { isCheck } from "./isCheck";
 import { forceComplexMove } from './forceComplexMove';
