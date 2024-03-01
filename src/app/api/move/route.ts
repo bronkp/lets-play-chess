@@ -3,12 +3,12 @@ import { cookies, headers } from "next/headers";
 import { makeBoard } from "../../../../chessFunctions/makeBoard";
 import { buildCurrentBoard } from "../../../../chessFunctions/buildCurrentBoard";
 import { isMoveLegal } from "../../../../chessFunctions/isMoveLegal";
-import { Move } from "../../../../types/types";
+import { BoardInfo, Move } from "../../../../types/types";
 import { isMate } from "../../../../chessFunctions/isMate";
 import _ from "lodash";
 import { isCheck } from "../../../../chessFunctions/isCheck";
 import { forceMove } from "../../../../chessFunctions/forceComplexMove";
-export async function GET() {
+export async function POST(req: { json: () => any; }) {
   const cookieStore = cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,16 +27,23 @@ export async function GET() {
       },
     }
   );
-  if (headers().get("move") == null) {
+    let body =await  req.json()
+
+
+
+
+  if (body.move == null) {
     return Response.json({ error: "no turn sent" });
   }
-  
-  let game_id = headers().get("game_id");
-  let move = JSON.parse(headers().get("move") as string) as Move;
-
-  let user_id = headers().get("userId");
+  let game_id = body.game_id;
+  let move = JSON.parse(body.move);
+  let user_id = body.userId;
   let entries = await supabase.from("Sessions").select().eq("id", game_id);
   let game_data = entries.data![0];
+  if(!game_data.game_ready){
+    return Response.json({ error: "Missing a player! Wait till they join" });
+
+  }
   if(game_data.mate){
     return Response.json({ error: "game is over" });
   }
@@ -55,11 +62,11 @@ export async function GET() {
   let {  postBoardBuildDetails, castleConditions } = buildCurrentBoard(moves);
 
   let board = postBoardBuildDetails?.board;
-  let isPawn = board[move?.start.y][move?.start.x].piece.name == "Pawn";
-  let end = board[move?.start.y][move?.start.x].pieceColor == "white" ? 0 : 7;
+  let isPawn = board![move?.start.y][move?.start.x].piece.name == "Pawn";
+  let end = board![move?.start.y][move?.start.x].pieceColor == "white" ? 0 : 7;
   let pawnToUpgrade;
   let isEnd = move.end.y == end;
-  let upgrade = headers().get("pawnUpgrade");
+  let upgrade = body.pawnUpgrade;
   if (isPawn && isEnd && upgrade == null) {
     return Response.json({ error: "Pawn move did not come with upgrade key" });
   } else if (isPawn && isEnd) {
@@ -70,23 +77,18 @@ export async function GET() {
 
     move.upgrade = upgrade as string;
   }
-  let legal = isMoveLegal(postBoardBuildDetails, turn, move, castleConditions);
+  let legal = isMoveLegal(postBoardBuildDetails! as BoardInfo, turn, move, castleConditions);
   let mate = ""
-  console.log("checks",postBoardBuildDetails?.blackKing.check)
   if (legal) {
     moves.push(move!);
     let postMove = forceMove(_.cloneDeep(board!),move,postBoardBuildDetails?.whiteKing!,postBoardBuildDetails?.blackKing!)
     
     let whiteCheck = isCheck(_.cloneDeep(postMove.board!),"white",postBoardBuildDetails?.whiteKing.cords!)
     let blackCheck = isCheck(_.cloneDeep(postMove.board!),"black",postBoardBuildDetails?.blackKing.cords!)
-    console.clear()
-    console.log(blackCheck,whiteCheck)
     if(blackCheck){
       let checkMate = isMate(_.cloneDeep(postMove.board!),"black",_.cloneDeep(postBoardBuildDetails!.blackKing))
-      console.log('checkmate BLK', checkMate)
       if(checkMate){
         mate = "black"
-        console.log("black")
       
     }}
     else if(whiteCheck){
@@ -95,7 +97,6 @@ export async function GET() {
         mate = "white"
 
     }}
-    console.log(mate,"mate")
     let response = await supabase
       .from("Sessions")
       .update({ moves: moves, turn: turn == "white" ? "black" : "white", mate:mate})

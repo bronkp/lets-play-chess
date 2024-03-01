@@ -605,11 +605,11 @@ const Board: React.FC<BoardProps> = ({ lastMove,online,handleOnlineMove}) => {
     }
     return check;
   }
-  function handleEnemyMove(move) {
+  function handleEnemyMove(move: { start: any; end: any; }) {
     console.log(move);
     let boardCopy = _.cloneDeep(realBoard);
     let start = move.start;
-    let end = boardCopy[move.end.y][move.end.x];
+    let end = boardCopy![move.end.y][move.end.x];
     boardCopy = highlightPieces([end], boardCopy!, whtKing, end);
     console.log(boardCopy);
     handleClick(boardCopy, end, boardCopy[start.y][start.x]);
@@ -700,7 +700,7 @@ const Board: React.FC<BoardProps> = ({ lastMove,online,handleOnlineMove}) => {
               {row.map((tile: Cord, index) => (
                 <div
                   key={index}
-                  onClick={() => handleClick(realBoard, tile, hiPiece,online)}
+                  onClick={() => handleClick(realBoard, tile, hiPiece!,online)}
                   className={styles.tile}
                   style={{
                     color: tile.pieceColor,

@@ -31,15 +31,60 @@ flex-direction: column;
   overflow-y: scroll;
 }
 .upgrade{
-  background-color: rgb(140,140,140);
+  gap:1.5em;
+  border-radius: 3em;
+  padding: 1em;
+  background-color: rgb(177, 177, 177);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: 15em;
+  height: 20em;
+  padding-right: 2em;
+}
+.upgrade p{
+  color:white;
+  margin-left: 1em;
+  margin-top: 1em;
+  position: absolute;
+  rotate: 90deg;
 }
 .button-container{
   padding: 1em;
   width:55em;
   display: flex;
   flex-direction: column;
+}
+.pop-up-background{
+  overflow: hidden;
+  background-color: gray;
+  left:0;
+  top:0;
+  max-width: 100vw;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  position:fixed;
+  opacity: 60%;
+}
+.pop-up-view{
+  padding-left:6em ;
+  flex-direction: column;
+  left:5%;
+  justify-content: center;
+  display: flex;
+  text-align: left;
+  border-radius: 5em;
+  width: 60em;
+  height: 20em;
+  top:10em;
+  position: fixed;
+background-color: rgb(251, 249, 249);
+}
+.wide-container{
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  display: flex;
 }

@@ -34,7 +34,6 @@ export function isMate(board: Cord[][],pieceColor: string,king: KingStore){
                   start.piece.name == "King" ? moveTile : king.cords
                 );
                 if(!check){
-                    console.log("yesy",moveTile,start)
                 }
                 if (!check) {
                   return false;

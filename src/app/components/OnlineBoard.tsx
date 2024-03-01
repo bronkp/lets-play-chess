@@ -15,6 +15,8 @@ import { supabase } from "../../../supa/client";
 import { buildCurrentBoard } from "../../../chessFunctions/buildCurrentBoard";
 import { error } from "console";
 import { simpleMove } from "../../../chessFunctions/simpleMove";
+import SharePopUp from "./SharePopUp";
+import { SupaBoard } from "../../../types/types";
 type KingStore = {
   cords: Cord;
   check: Boolean;
@@ -31,14 +33,14 @@ type BoardProps = {
   params: any;
 };
 const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
+  const [gameReady, setGameReady] = useState(false);
   const [hiPiece, setHiPiece] = useState<Cord | null>();
   const [turnState, setTurnState] = useState(true);
-  const [checkMate,setCheckMate] = useState("")
-  const [pawnToUpgrade, setPawnToUpgrade] = useState<LastMove>();
-  const [pawnToEnPass, setPawntoEnPass] = useState<Cord | null>();
+  const [checkMate, setCheckMate] = useState<string|null>("");
+  const [pawnToUpgrade, setPawnToUpgrade] = useState<LastMove|null>();
+  const [pawnToEnPass, setPawntoEnPass] = useState<null | Cord>();
   const [history, setHistory] = useState<String[]>();
-  const [userColor,setUserColor]=useState()
-  const [lastLocalMove, setLastLocalMove] = useState<LastMove>();
+  const [userColor, setUserColor] = useState("");
   const [blkKing, setBlkKing] = useState<KingStore>({
     cords: new Cord("light", r.King, "black", 4, 0),
     check: false,
@@ -54,12 +56,12 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   });
   const [turn, setTurn] = useState("white");
   const [debug, setDebug] = useState(false);
-  const [userId,setUserId] =useState()
+  const [userId, setUserId] = useState("");
   const upgradeKey = {
-    Bishop: <FaChessBishop />,
     Queen: <FaChessQueen />,
-    Rook: <FaChessRook />,
     Knight: <FaChessKnight />,
+    Bishop: <FaChessBishop />,
+    Rook: <FaChessRook />,
   };
   //pass realboard and hipiece as work around for recieving online moves
   async function handleClick(realBoard: Cord[][], tile: Cord, hiPiece: Cord) {
@@ -77,119 +79,37 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
         boardCopy = clearHighlights(boardCopy);
         setRealBoard(boardCopy);
         return;
-      } else if ((clickedPieceColor !=  userColor||clickedPieceColor!=turn) && !debug) {
+      } else if (clickedPieceColor != userColor || clickedPieceColor != turn) {
         return;
       } else {
         boardCopy = handleHighlights(boardCopy, tile);
         setRealBoard(boardCopy);
       }
     } else {
-      await handleMoveAttempt(tile,hiPiece,boardCopy)
+      await handleMoveAttempt(tile, hiPiece, boardCopy);
     }
   }
-  async function sendUpgradeMove(key:string){
-    let start = pawnToUpgrade?.start
-    let end = pawnToUpgrade?.end
-    console.log(key)
-    let valid  = await sendMove( start, end, key);
-    //TODO add upgrade function to handleHighlightedClick
-    valid &&handleHighlightedClick(_.cloneDeep(realBoard), end, start);
-    setPawnToUpgrade(null)
+  async function sendUpgradeMove(key: string) {
+    let start = pawnToUpgrade?.start;
+    let end = pawnToUpgrade?.end;
+    let valid = await sendMove(start!, end!, key);
+    setPawnToUpgrade(null);
   }
-  async function handleMoveAttempt(tile:Cord,hiPiece:Cord,boardCopy:Cord[][]){
-    let isPawn = hiPiece.piece.name == "Pawn"
-    let end = hiPiece.pieceColor=="white"?0:7
-    let isEnd = tile.y == end
-    if(isPawn&&isEnd){
-      console.log('end')
-      setPawnToUpgrade({start:hiPiece,end:tile})
-      setRealBoard(preUpgradeVisual(_.cloneDeep(realBoard),hiPiece,tile))
-    }else{
-      let valid  = await sendMove(hiPiece, tile,null);
+  async function handleMoveAttempt(
+    tile: Cord,
+    hiPiece: Cord,
+    boardCopy: Cord[][]
+  ) {
+    let isPawn = hiPiece.piece.name == "Pawn";
+    let end = hiPiece.pieceColor == "white" ? 0 : 7;
+    let isEnd = tile.y == end;
+    if (isPawn && isEnd) {
+      setPawnToUpgrade({ start: hiPiece, end: tile });
+      setRealBoard(preUpgradeVisual(_.cloneDeep(realBoard!), hiPiece, tile));
+    } else {
+      let valid = await sendMove(hiPiece, tile, null);
       //valid &&handleHighlightedClick(boardCopy, tile, hiPiece);
     }
-  }
-
-  function handleHighlightedClick(
-    boardCopy: Cord[][],
-    tile: Cord,
-    hiPiece: Cord
-  ) {
-    let clickedPieceName = tile.piece.name;
-    let whiteK = { ...whtKing };
-    let blackK = { ...blkKing };
-    let clickedTileIndex = tile.x;
-    let clickedRowIndex = tile.y;
-    let highlightedTileIndex = hiPiece?.x;
-    let highlightedRowIndex = hiPiece?.y;
-    let highlightedPieceColor = hiPiece?.pieceColor;
-    let highlightedPieceName = hiPiece?.piece.name;
-    let moveIsEnPassant =
-      clickedPieceName == "None" &&
-      clickedTileIndex != highlightedTileIndex &&
-      highlightedPieceName == "Pawn";
-    if (moveIsEnPassant) {
-      let enemyIndex =
-        clickedRowIndex + (highlightedPieceColor == "white" ? 1 : -1);
-      let enPassantPieceTakenCord = boardCopy[enemyIndex][clickedTileIndex];
-      enPassantPieceTakenCord.piece = r.None;
-    }
-    setPawntoEnPass(null);
-    if (highlightedPieceName == "King") {
-      let kingMovedTwoSpacesRight =
-        highlightedTileIndex! + 2 == clickedTileIndex;
-      let kingMovedTwoSpacesLeft =
-        highlightedTileIndex! - 2 == clickedTileIndex;
-      if (kingMovedTwoSpacesRight) {
-        boardCopy = castle(boardCopy, "right");
-      } else if (kingMovedTwoSpacesLeft) {
-        boardCopy = castle(boardCopy, "left");
-      }
-    }
-    boardCopy = movePiece(tile, boardCopy, hiPiece!);
-    let endIndex = highlightedPieceColor == "white" ? 0 : 7;
-    let pawnReachedEnd =
-      highlightedPieceName == "Pawn" && clickedRowIndex == endIndex;
-    let startIndex = highlightedPieceColor == "white" ? 6 : 1;
-    let doubleMoveIndex = highlightedPieceColor == "white" ? 4 : 3;
-    let pawnDoubleMoved =
-      highlightedPieceName == "Pawn" &&
-      clickedRowIndex == doubleMoveIndex &&
-      highlightedRowIndex == startIndex;
-    if (pawnReachedEnd) {
-      setPawnToUpgrade({
-        ...boardCopy[clickedRowIndex][clickedTileIndex],
-      } as Cord);
-    } else if (pawnDoubleMoved) {
-      setPawntoEnPass(boardCopy[clickedRowIndex][clickedTileIndex]);
-    } else if (highlightedPieceName == "Rook") {
-      updateRookState(highlightedTileIndex!, highlightedPieceColor!);
-    } else if (highlightedPieceName == "King") {
-      let clickedTile = boardCopy[clickedRowIndex][clickedTileIndex];
-      let update = updateKingState(
-        _.cloneDeep(whiteK),
-        _.cloneDeep(blackK),
-        clickedTile,
-        highlightedPieceColor!
-      );
-      whiteK = update.whiteK;
-      blackK = update.blackK;
-    }
-    let startPosition =
-      String.fromCharCode(97 + highlightedTileIndex!) +
-      (highlightedRowIndex! + 1);
-    let endPosition =
-      String.fromCharCode(97 + clickedTileIndex) + (clickedRowIndex + 1);
-    //end of move turn section
-    setHistory([
-      ...(history ? history : []),
-      `${startPosition} => ${endPosition}`,
-    ]);
-    setTurnState(!turnState);
-    boardCopy = clearHighlights(boardCopy);
-    kingVerify(boardCopy, whiteK, blackK);
-    setHiPiece(null);
-    setRealBoard(boardCopy);
   }
   //highlights during click event different function than highlighting board given
   function handleHighlights(boardCopy: Cord[][], tile: Cord) {
@@ -321,36 +241,12 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       check: whiteCheck,
     });
     if (whiteCheck) {
-      isMate(boardCopy, "white", whiteKing) && alert("checkmate");
+      isMate(boardCopy, "white", whiteKing) && setCheckMate("white");
     } else if (blackCheck) {
-      isMate(boardCopy, "black", blackKing) && alert("checkmate");
+      isMate(boardCopy, "black", blackKing) && setCheckMate("black");
     }
   }
-  function upgradePawn(piece: string) {
-    let boardCopy = _.cloneDeep(realBoard!);
-    boardCopy[pawnToUpgrade!.y][pawnToUpgrade!.x].piece =
-      r[piece as keyof typeof r];
-    setRealBoard(boardCopy);
-    setPawnToUpgrade(null);
-    kingVerify(boardCopy, whtKing, blkKing);
-  }
-  //moves the rook piece in case of a castle
-  function castle(boardCopy: Cord[][], direction: string) {
-    if (direction == "left") {
-      boardCopy = movePiece(
-        boardCopy[hiPiece!.y][hiPiece!.x - 1],
-        boardCopy,
-        boardCopy[hiPiece!.y][hiPiece!.x - 4]
-      );
-    } else {
-      boardCopy = movePiece(
-        boardCopy[hiPiece!.y][hiPiece!.x + 1],
-        boardCopy,
-        boardCopy[hiPiece!.y][hiPiece!.x + 3]
-      );
-    }
-    return boardCopy;
-  }
+ 
   //checks if en passant is possible
   function isEnPassPossible(tile: Cord) {
     if (
@@ -377,13 +273,16 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
         if (search.piece.name != "None" && search.pieceColor == pieceColor) {
           //all moves a piece could make
           let getMoves =
-      r[
-        boardCopy![search.y][search.x].piece
-          .name as keyof typeof r
-      ].getRules();
-    
+            r[
+              boardCopy![search.y][search.x].piece.name as keyof typeof r
+            ].getRules();
 
-          let moves = getMoves(search.pieceColor, search.x, search.y, boardCopy);;
+          let moves = getMoves(
+            search.pieceColor,
+            search.x,
+            search.y,
+            boardCopy
+          );
           //for each move of possible moves
           for (let move = 0; move < moves.length; move++) {
             let copy = _.cloneDeep(boardCopy!);
@@ -627,12 +526,16 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       if (search.piece.name != "None" && search.pieceColor != pieceColor) {
         //gets enemy moves
         let getMoves =
-        r[
-          boardCopy![search.y][search.x].piece
-            .name as keyof typeof r
-        ].getRules();
-            let enemyMoves = getMoves(search.pieceColor, search.x, search.y, boardCopy);;
-     
+          r[
+            boardCopy![search.y][search.x].piece.name as keyof typeof r
+          ].getRules();
+        let enemyMoves = getMoves(
+          search.pieceColor,
+          search.x,
+          search.y,
+          boardCopy
+        );
+
         //checks if piece has a move to take the king and returns true or false
         check = enemyMoves.some((x: Move) => {
           if (x.x == king.x && x.y == king.y) {
@@ -688,14 +591,17 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }).then((body) => {
       return body.json();
     });
-    console.log(data);
     setRealBoard(data.message);
   }
-  async function sendMove(start: Cord, end: Cord, upgrade:null|string) {
-    console.log('sendmove details',upgrade)
-    let data = await fetch("/api/move", {
-      headers: {
-        userId:userId,
+  async function sendMove(
+    start: Cord | Move,
+    end: Cord | Move,
+    upgrade: null | string
+  ) {
+    console.log("sendmove details", upgrade);
+    let body = JSON.stringify(
+      {
+        userId: userId,
         game_id: params.game_id,
         pawnUpgrade: upgrade,
         turn: "white",
@@ -709,62 +615,58 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
             y: start.y,
           },
         }),
-      },
+      }
+
+    )
+    let data = await fetch("/api/move", {
+      method:"POST",
+      headers: {
+        'Content-Type': 'application/json',
+      },body:body
     }).then((body) => {
       return body.json();
     });
-    console.log(data.error)
-    if(data.error){
-      console.log(data.error)
-      return false
-    }else{
+    console.log(data.error);
+    if (data.error) {
+      console.log(data.error);
+      return false;
+    } else {
       console.log(data, "move made");
-      return true
+      return true;
     }
   }
-  async function illegalMove() {
-    let data = await fetch("/api/move", {
-      headers: {
-        game_id: params.game_id,
-        turn: "white",
-        move: JSON.stringify({
-          end: {
-            x: 7,
-            y: 3,
-          },
-          start: {
-            x: 7,
-            y: 7,
-          },
-        }),
-      },
-    }).then((body) => {
-      return body.json();
-    });
-    console.log(data);
-    setRealBoard(data.message);
-  }
   async function getBoard() {
+    let body = JSON.stringify({
+      game_id: params.game_id,
+    });
     let board = await fetch("/api/getBoard", {
-      headers: { game_id: params.game_id },
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: body,
     }).then((body) => {
       return body.json();
     });
-
+    console.log(board.game_ready, "here", board);
+    if (board.game_ready) {
+      setGameReady(true);
+    }
     if (board.board) {
       //console.log(board.board?"a":"b")
       setRealBoard(board.board);
-      console.log(board);
       setTurn(board.turn);
-      console.log(board)
-      setWhtKing(board?.whiteKing)
-      setBlkKing(board?.blackKing)
-      let moves = board.moves
-      if(moves){
-        let moveHistory = formatHistory(moves)
-        setHistory(moveHistory)
+      setWhtKing(board?.whiteKing);
+      setBlkKing(board?.blackKing);
+      setPawntoEnPass(board.pawnToEnPassant);
+      console.log("recieved", board);
+      setCastleCon(board.castleConditions);
+      let moves = board.moves;
+      if (moves) {
+        let moveHistory = formatHistory(moves);
+        setHistory(moveHistory);
       }
-
     } else {
       makeNew();
     }
@@ -784,12 +686,11 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
           event: "*",
           schema: "public",
           table: "Sessions",
-          filter: "id=eq."+params.game_id
+          filter: "id=eq." + params.game_id,
         },
-        (payload) =>{
-          console.log(payload)
-          handleIncomingMove(payload.new)
-        } 
+        (payload) => {
+          handleIncomingMove(payload.new as SupaBoard);
+        }
       )
       .subscribe();
 
@@ -797,218 +698,241 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       supabase.removeChannel(channel);
     };
   }, [supabase]);
-function formatHistory(moves:LastMove[]){
-
-  let moveHistory = []
-  for(let i = 0; i<moves.length;i++){
-    let move = moves[i]
-    let start = move.start
-    let end = move.end
-    let startPosition =
-      String.fromCharCode(97 + start.x!) +
-      (start.y! + 1);
-    let endPosition =
-      String.fromCharCode(97 + end.x) + (end.y + 1);
-    //end of move turn section
-    moveHistory.push(
-  
-      `${startPosition} => ${endPosition}`,
-    )
-    
-  }
-  return moveHistory
-}
-function handleIncomingMove(sessionData){
-  let moves = sessionData.moves  as LastMove[]
-  let moveHistory = formatHistory(moves)
-  setHistory(moveHistory)
-  let {postBoardBuildDetails,castleConditions}= buildCurrentBoard(moves)
-  setCastleCon(castleCon)
-  let board = postBoardBuildDetails.board
-  console.log(postBoardBuildDetails?.blackKing)
-  setWhtKing(postBoardBuildDetails?.whiteKing)
-  setBlkKing(postBoardBuildDetails?.blackKing)
-  setRealBoard(board)
-  setTurn(sessionData.turn)
-  setCheckMate(sessionData.mate)
-
-}
-async function getUserId(){
-  let userColor = sessionStorage.getItem("user_color")
-  let gameId = sessionStorage.getItem("game_id")
-  let sessionId = sessionStorage.getItem("session_id",)
-  if(gameId!=params.game_id||!sessionId||!userColor){
-    sessionStorage.setItem("game_id",params.game_id)
-    let data = await fetch('/api/getUserId',{headers:{game_id:params.game_id}}).then((data)=>{return data.json()})
-    if(data.error){
-      console.log(data.error)
-      //TODO: SET ERROR RESULT
-    }else{
-      sessionStorage.setItem("session_id", data.id)
-      sessionStorage.setItem("user_color", data.color)
-      setUserId(data.id)
-      setUserColor(data.color)
-
+  function formatHistory(moves: LastMove[]) {
+    let moveHistory = [];
+    for (let i = 0; i < moves.length; i++) {
+      let move = moves[i];
+      let start = move.start;
+      let end = move.end;
+      let startPosition = String.fromCharCode(97 + start.x!) + (start.y! + 1);
+      let endPosition = String.fromCharCode(97 + end.x) + (end.y + 1);
+      //end of move turn section
+      moveHistory.push(`${startPosition} => ${endPosition}`);
     }
-  }else if(sessionId){
-    setUserId(sessionId)
-    setUserColor(userColor)
-
+    return moveHistory;
   }
- 
-}
-useEffect(()=>{getUserId()},[])
-
-async function cheat(){
-  let data = await fetch("/api/move", {
-    headers: {
-      userId:userId,
+  function handleIncomingMove(sessionData:SupaBoard) {
+    if (sessionData.game_ready) setGameReady(true);
+    let moves = sessionData.moves as LastMove[];
+    let moveHistory = formatHistory(moves);
+    setHistory(moveHistory);
+    let { postBoardBuildDetails, castleConditions } = buildCurrentBoard(moves);
+    setCastleCon(castleConditions);
+    let board = postBoardBuildDetails?.board;
+    console.log(postBoardBuildDetails?.blackKing);
+    setWhtKing(postBoardBuildDetails?.whiteKing!);
+    setBlkKing(postBoardBuildDetails?.blackKing!);
+    setRealBoard(board);
+    setTurn(sessionData.turn);
+    setCheckMate(sessionData.mate);
+    setPawntoEnPass(postBoardBuildDetails?.pawnToEnPassant);
+  }
+  async function getUserId() {
+    let userColor = sessionStorage.getItem("user_color");
+    let gameId = sessionStorage.getItem("game_id");
+    let sessionId = sessionStorage.getItem("session_id");
+    let body = JSON.stringify({
       game_id: params.game_id,
-      pawnUpgrade: null,
-      turn: "white",
-      move: JSON.stringify({
-        end: {
-          x: 2,
-          y: 7,
-        },
-        start: {
-          x: 4,
-          y: 7,
-        },
-      }),
-    },
-  }).then((body) => {
-    return body.json();
-  });
-  console.log(data)
-}
-function preUpgradeVisual(board:Cord[][],start:Cord,end:Cord){
-  board = simpleMove(board,start,end)
-  board = clearHighlights(board)
-  return board
-}
+    });
+    if (gameId != params.game_id || !sessionId || !userColor) {
+      sessionStorage.setItem("game_id", params.game_id);
+      let data = await fetch("/api/getUserId", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: body,
+      }).then((data) => {
+        return data.json();
+      });
+      if (data.error) {
+        console.log(data.error);
+        //TODO: SET ERROR RESULT
+      } else {
+        sessionStorage.setItem("session_id", data.id);
+        sessionStorage.setItem("user_color", data.color);
+        setUserId(data.id);
+        setUserColor(data.color);
+      }
+    } else if (sessionId) {
+      setUserId(sessionId);
+      setUserColor(userColor);
+    }
+  }
+  useEffect(() => {
+    getUserId();
+  }, []);
+
+  // async function cheat() {
+  //   let data = await fetch("/api/move", {
+  //     headers: {
+  //       userId: userId,
+  //       game_id: params.game_id,
+  //       pawnUpgrade: null,
+  //       turn: "white",
+  //       move: JSON.stringify({
+  //         end: {
+  //           x: 2,
+  //           y: 7,
+  //         },
+  //         start: {
+  //           x: 4,
+  //           y: 7,
+  //         },
+  //       }),
+  //     },
+  //   }).then((body) => {
+  //     return body.json();
+  //   });
+  //   console.log(data);
+  // }
+  function preUpgradeVisual(board: Cord[][], start: Cord, end: Cord) {
+    board = simpleMove(board, start, end);
+    board = clearHighlights(board);
+    return board;
+  }
   return (
     <>
-    {pawnToUpgrade?.end!.x!} {pawnToUpgrade?.end!.y!}
+      {!gameReady && <SharePopUp link={params.game_id} />}
+      {pawnToUpgrade?.end!.x!} {pawnToUpgrade?.end!.y!}
       <div className={styles["button-container"]}>
         <div>
           {turn == "white" ? "White's" : "Black's"} Turn {debug && "* DEBUG"}
         </div>
-        <button
-          onClick={() => console.log("Board", realBoard, "Selected", hiPiece)}
+        {/* <button
+          onClick={() => {
+            cheat();
+          }}
         >
-          Debug Info
-        </button>
-        <button onClick={()=>{cheat()}}>Cheat</button>
+          Cheat
+        </button> */}
         <button
           onClick={() => {
             setDebug(!debug);
           }}
         >
-          Debug Move
+          Debug Info
         </button>
-        {/* <button onClick={() => makeNew()}>New Board</button> */}
-        <p>{userId}</p>
-        {checkMate&&<h1>Game Over: {checkMate=="white"?"Black":"White"} Has Won</h1>}
-          <h1>{userColor==turn?"Your Turn":"Opponent's Turn"}</h1>
+        {debug && <p>User: {userId}</p>}
+        {debug && <p>Game: {params.game_id}</p>}
+
+        {checkMate && (
+          <h1>Game Over: {checkMate == "white" ? "Black" : "White"} Has Won</h1>
+        )}
       </div>
-      <div className={styles["board-container" as keyof typeof styles]}>
-        <div className={styles.column}>
-          <div className={styles.row}>
-            <div
-              style={{ backgroundColor: "rgb(168, 165, 165)" }}
-              className={styles.tile}
-            ></div>
-            {(userColor=="white"? ["A", "B", "C", "D", "E", "F", "G", "H"]:["A", "B", "C", "D", "E", "F", "G", "H"].reverse()).map((cord, key) => (
+      <div className={styles["wide-container"]}>
+        <h1>{userColor == turn ? "Your Turn" : "Opponent's Turn"}</h1>
+        <div className={styles["board-container" as keyof typeof styles]}>
+          <div className={styles.column}>
+            <div className={styles.row}>
               <div
-                key={key}
-                style={{
-                  color: "white",
-                  backgroundColor:
-                    key % 2 ? "rgb(168, 165, 165)" : "rgb(140, 140, 140)",
-                }}
+                style={{ backgroundColor: "rgb(168, 165, 165)" }}
                 className={styles.tile}
-              >
-                {cord}
-              </div>
-            ))}
-          </div>
-          {realBoard &&
-          (userColor=="white"? realBoard:_.cloneDeep(realBoard).reverse())
-           ?.map((row: Cord[], index) => (
-              <div key={index} className={styles.row}>
+              ></div>
+              {(userColor == "white"
+                ? ["A", "B", "C", "D", "E", "F", "G", "H"]
+                : ["A", "B", "C", "D", "E", "F", "G", "H"].reverse()
+              ).map((cord, key) => (
                 <div
+                  key={key}
                   style={{
                     color: "white",
                     backgroundColor:
-                      index % 2 ? "rgb(168, 165, 165)" : "rgb(140, 140, 140)",
+                      key % 2 ? "rgb(168, 165, 165)" : "rgb(140, 140, 140)",
                   }}
                   className={styles.tile}
                 >
-                  {userColor=="white"?index + 1:8-index}
+                  {cord}
                 </div>
-                {(userColor=="white"? row:_.cloneDeep(row).reverse()) .map((tile: Cord, index) => (
+              ))}
+            </div>
+            {realBoard &&
+              (userColor == "white"
+                ? realBoard
+                : _.cloneDeep(realBoard).reverse()
+              )?.map((row: Cord[], index) => (
+                <div key={index} className={styles.row}>
                   <div
-                    key={index}
-                    onClick={() => {!checkMate&&!pawnToUpgrade&&handleClick(realBoard, tile, hiPiece)}}
-                    className={styles.tile}
                     style={{
-                      color: tile.pieceColor,
-                      cursor: "pointer",
+                      color: "white",
                       backgroundColor:
-                      pawnToUpgrade?.end.x==tile.x&&pawnToUpgrade.end.y==tile.y?"green":
-                        (whtKing.check &&
-                          tile.x == whtKing.cords.x &&
-                          tile.y == whtKing.cords.y) ||
-                        (blkKing.check &&
-                          tile.x == blkKing.cords.x &&
-                          tile.y == blkKing.cords.y)
-                          ? "rgb(255, 82, 90)"
-                          : tile.highlighted
-                          ? "rgb(101, 197, 252)"
-                          : tile.tileColor == "light"
-                          ? "rgb(255, 206, 153)"
-                          : "rgb(77, 48, 17)",
+                        index % 2 ? "rgb(168, 165, 165)" : "rgb(140, 140, 140)",
                     }}
+                    className={styles.tile}
                   >
-                    {tile.piece.name != "None" &&
-                      {
-                        Pawn: <FaChessPawn />,
-                        Bishop: <FaChessBishop />,
-                        King: <FaChessKing />,
-                        Queen: <FaChessQueen />,
-                        Rook: <FaChessRook />,
-                        Knight: <FaChessKnight />,
-                      }[tile.piece.name]}
+                    {userColor == "white" ? index + 1 : 8 - index}
                   </div>
-                ))}
-              </div>
-            ))}
-        </div>
+                  {(userColor == "white"
+                    ? row
+                    : _.cloneDeep(row).reverse()
+                  ).map((tile: Cord, index) => (
+                    <div
+                      key={index}
+                      onClick={() => {
+                        !checkMate &&
+                          !pawnToUpgrade &&
+                          handleClick(realBoard, tile, hiPiece!);
+                      }}
+                      className={styles.tile}
+                      style={{
+                        color: tile.pieceColor,
+                        cursor: "pointer",
+                        backgroundColor:
+                          pawnToUpgrade?.end.x == tile.x &&
+                          pawnToUpgrade.end.y == tile.y
+                            ? "rgb(153, 255, 89)"
+                            : (whtKing.check &&
+                                tile.x == whtKing.cords.x &&
+                                tile.y == whtKing.cords.y) ||
+                              (blkKing.check &&
+                                tile.x == blkKing.cords.x &&
+                                tile.y == blkKing.cords.y)
+                            ? "rgb(255, 82, 90)"
+                            : tile.highlighted
+                            ? "rgb(101, 197, 252)"
+                            : tile.tileColor == "light"
+                            ? "rgb(255, 206, 153)"
+                            : "rgb(77, 48, 17)",
+                      }}
+                    >
+                      {tile.piece.name != "None" &&
+                        {
+                          Pawn: <FaChessPawn />,
+                          Bishop: <FaChessBishop />,
+                          King: <FaChessKing />,
+                          Queen: <FaChessQueen />,
+                          Rook: <FaChessRook />,
+                          Knight: <FaChessKnight />,
+                        }[tile.piece.name]}
+                    </div>
+                  ))}
+                </div>
+              ))}
+          </div>
 
-        {pawnToUpgrade && (
-          <div className={styles.upgrade}>
-            {Object.keys(upgradeKey).map((key, index) => (
-              <div
-                onClick={() => sendUpgradeMove(key)}
-                style={{
-                  cursor: "pointer",
-                  color: userColor,
-                }}
-                key={index}
-              >
-                {upgradeKey[key as keyof typeof upgradeKey]}
-              </div>
+          {pawnToUpgrade && (
+            <div className={styles.upgrade}>
+              <p>Pawn Upgrade</p>
+              {Object.keys(upgradeKey).map((key, index) => (
+                <div
+                  onClick={() => sendUpgradeMove(key)}
+                  style={{
+                    cursor: "pointer",
+                    color: userColor,
+                  }}
+                  key={index}
+                >
+                  {upgradeKey[key as keyof typeof upgradeKey]}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className={styles.history}>
+            <h2>Move History</h2>
+            {history?.map((move, key) => (
+              <p key={key}>
+                {key + 1}. {move}
+              </p>
             ))}
           </div>
-        )}
-        <div className={styles.history}>
-          <h2>Move History</h2>
-          {history?.map((move, key) => (
-            <p key={key}>
-              {key + 1}. {move}
-            </p>
-          ))}
         </div>
       </div>
     </>

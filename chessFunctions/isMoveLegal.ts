@@ -13,7 +13,7 @@ type MoveCord = {
             board: Cord[][];
             whiteKing: KingStore;
             blackKing: KingStore;
-            pawnToEnPassant: any;
+            pawnToEnPassant: Cord;
             
         
   
@@ -48,7 +48,7 @@ export function isMoveLegal(boardInfo:BoardInfo,turn:string,move:Move,castleCond
   let end = start.pieceColor=="white"?0:7  
   if(isPawn&&move.end.y==end&&move.upgrade==null){
     return false
-  }else if(isPawn&&end){
+  }else if(isPawn&&move.end.y==end){
     let validUpgrades = ["Queen","Bishop","Rook","Knight"]
     if(!validUpgrades.includes(move.upgrade as string)){
       return false
@@ -94,7 +94,7 @@ export function isMoveLegal(boardInfo:BoardInfo,turn:string,move:Move,castleCond
 }
 
 
-function isEnPassPossible(start: Cord,pawnToEnPassant) {
+function isEnPassPossible(start: Cord,pawnToEnPassant: Cord) {
     if (
       start.piece.name == "Pawn" &&
       pawnToEnPassant &&

@@ -13,3 +13,21 @@ export type KingStore = {
     cords: Cord;
     check: Boolean;
   };
+export type SupaBoard = {
+  id:string;
+  turn:string;
+  moves:Move[];
+  mate:string|null;
+  game_ready:Boolean;
+}
+export  type BoardInfo={
+    
+      
+  board: Cord[][];
+  whiteKing: KingStore;
+  blackKing: KingStore;
+  pawnToEnPassant: Cord;
+  
+
+
+}

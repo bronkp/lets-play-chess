@@ -3,7 +3,7 @@ import { makeBoard } from "./makeBoard";
 import * as r from "../src/app/ruleset/ruleset";
 import _ from "lodash";
 import Board from "@/app/components/Board";
-import { KingStore, Move } from "../types/types";
+import { BoardInfo, KingStore, Move } from "../types/types";
 import { isCheck } from "./isCheck";
 
 export function buildCurrentBoard(moves: Move[]) {
@@ -50,7 +50,7 @@ export function buildCurrentBoard(moves: Move[]) {
       board = postBoardBuildDetails.board;
       let isWhite = movedPiece.pieceColor == "white" ? true : false;
       let moveIsKing = movedPiece.piece.name == "King";
-      let endCord = board[move.end.y][move.end.x]
+      let endCord = board[move.end.y][move.end.x];
       let check = isCheck(board, "white", whiteKing.cords);
       check ? (whiteKing.check = true) : (whiteKing.check = false);
       check = isCheck(board, "black", blackKing.cords);
@@ -60,12 +60,11 @@ export function buildCurrentBoard(moves: Move[]) {
         if (isWhite) {
           let check = isCheck(board, "white", endCord);
           check ? (whiteKing.check = true) : (whiteKing.check = false);
-          postBoardBuildDetails.whiteKing.cords = endCord
+          postBoardBuildDetails.whiteKing.cords = endCord;
         } else {
           let check = isCheck(board, "white", endCord);
           check ? (blackKing.check = true) : (whiteKing.check = false);
-          postBoardBuildDetails.blackKing.cords = endCord
-
+          postBoardBuildDetails.blackKing.cords = endCord;
         }
       }
     }
@@ -77,7 +76,7 @@ export function buildCurrentBoard(moves: Move[]) {
       pawnToEnPassant: null,
     };
   }
-  return {  postBoardBuildDetails, castleConditions };
+  return { postBoardBuildDetails, castleConditions };
 }
 function forceMove(
   board: Cord[][],
@@ -100,14 +99,20 @@ function forceMove(
     board[move.end.y][move.end.x].piece = r[move.upgrade as keyof typeof r];
   }
   let pawnToEnPassant = null;
+
+  if (pieceName == "Pawn") {
+    let moveTwice = start.y - end.y == 2 || start.y - end.y == -2;
+    if (moveTwice) {
+      pawnToEnPassant = board[end.y][end.x];
+    }
+  }
   return {
     board: board,
     whiteKing: whiteKing,
     blackKing: blackKing,
     pawnToEnPassant: pawnToEnPassant,
-  };
+  } as BoardInfo;
 }
-function clickHighlighted(boardCopy: Cord[][], tile: Cord, hiPiece: Cord) {}
 
 function tryCastle(board: Cord[][], start: Cord, end: Cord) {
   if (start.x - end.x == 2 || end.x - start.x == 2) {
