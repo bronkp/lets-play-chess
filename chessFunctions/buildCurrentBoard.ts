@@ -55,15 +55,15 @@ export function buildCurrentBoard(moves: Move[]) {
       check ? (whiteKing.check = true) : (whiteKing.check = false);
       check = isCheck(board, "black", blackKing.cords);
       check ? (blackKing.check = true) : (blackKing.check = false);
-
+      console.clear()
       if (moveIsKing) {
         if (isWhite) {
           let check = isCheck(board, "white", endCord);
           check ? (whiteKing.check = true) : (whiteKing.check = false);
           postBoardBuildDetails.whiteKing.cords = endCord;
         } else {
-          let check = isCheck(board, "white", endCord);
-          check ? (blackKing.check = true) : (whiteKing.check = false);
+          let check = isCheck(board, "black", endCord);
+          check ? (blackKing.check = true) : (blackKing.check = false);
           postBoardBuildDetails.blackKing.cords = endCord;
         }
       }
