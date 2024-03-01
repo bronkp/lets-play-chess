@@ -7,8 +7,9 @@ import { BoardInfo, Move } from "../../../../types/types";
 import { isMate } from "../../../../chessFunctions/isMate";
 import _ from "lodash";
 import { isCheck } from "../../../../chessFunctions/isCheck";
-import { forceMove } from "../../../../chessFunctions/forceComplexMove";
-export async function POST(req: { json: () => any; }) {
+import { forceComplexMove } from "../../../../chessFunctions/forceComplexMove";
+import { NextRequest } from "next/server";
+export async function POST(req: NextRequest) {
   const cookieStore = cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -81,7 +82,7 @@ export async function POST(req: { json: () => any; }) {
   let mate = ""
   if (legal) {
     moves.push(move!);
-    let postMove = forceMove(_.cloneDeep(board!),move,postBoardBuildDetails?.whiteKing!,postBoardBuildDetails?.blackKing!)
+    let postMove = forceComplexMove(_.cloneDeep(board!),move,postBoardBuildDetails?.whiteKing!,postBoardBuildDetails?.blackKing!)
     
     let whiteCheck = isCheck(_.cloneDeep(postMove.board!),"white",postBoardBuildDetails?.whiteKing.cords!)
     let blackCheck = isCheck(_.cloneDeep(postMove.board!),"black",postBoardBuildDetails?.blackKing.cords!)

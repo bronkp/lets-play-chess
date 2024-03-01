@@ -5,6 +5,7 @@ import _ from "lodash";
 import Board from "@/app/components/Board";
 import { BoardInfo, KingStore, Move } from "../types/types";
 import { isCheck } from "./isCheck";
+import { forceComplexMove } from './forceComplexMove';
 
 export function buildCurrentBoard(moves: Move[]) {
   let board = makeBoard();
@@ -41,7 +42,7 @@ export function buildCurrentBoard(moves: Move[]) {
         }
       }
 
-      postBoardBuildDetails = forceMove(
+      postBoardBuildDetails = forceComplexMove(
         _.cloneDeep(board),
         move,
         whiteKing,
@@ -78,41 +79,7 @@ export function buildCurrentBoard(moves: Move[]) {
   }
   return { postBoardBuildDetails, castleConditions };
 }
-function forceMove(
-  board: Cord[][],
-  move: Move,
-  whiteKing: KingStore,
-  blackKing: KingStore
-) {
-  let start = board[move.start.y][move.start.x];
-  let end = board[move.end.y][move.end.x];
-  let pieceName = start.piece.name;
-  if (pieceName == "Pawn") {
-    board = tryEnPassant(_.cloneDeep(board), start, end);
-  }
-  if (pieceName == "King") {
-    board = tryCastle(_.cloneDeep(board), start, end);
-  }
-  board = movePiece(_.cloneDeep(board), start, end);
-  //Pawn to Upgrade
-  if (move.upgrade) {
-    board[move.end.y][move.end.x].piece = r[move.upgrade as keyof typeof r];
-  }
-  let pawnToEnPassant = null;
 
-  if (pieceName == "Pawn") {
-    let moveTwice = start.y - end.y == 2 || start.y - end.y == -2;
-    if (moveTwice) {
-      pawnToEnPassant = board[end.y][end.x];
-    }
-  }
-  return {
-    board: board,
-    whiteKing: whiteKing,
-    blackKing: blackKing,
-    pawnToEnPassant: pawnToEnPassant,
-  } as BoardInfo;
-}
 
 function tryCastle(board: Cord[][], start: Cord, end: Cord) {
   if (start.x - end.x == 2 || end.x - start.x == 2) {

@@ -2,7 +2,8 @@ import { CookieOptions, createServerClient } from '@supabase/ssr';
 import { randomUUID } from 'crypto';
 import { uniqueId } from 'lodash';
 import { cookies, headers } from 'next/headers';
-export async function POST(req: { json: () => any; }) {
+import { NextRequest } from 'next/server';
+export async function POST(req:  NextRequest) {
     const cookieStore = cookies()
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -5,7 +5,7 @@ import { simpleMove } from "./simpleMove";
 import _ from "lodash";
 import { tryCastle } from "./tryCastle";
 import * as r from "../src/app/ruleset/ruleset";
-export function forceMove(
+export function forceComplexMove(
   board: Cord[][],
   move: Move,
   whiteKing: KingStore,
