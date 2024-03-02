@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" >
+    <html lang="en"  prefix="og: https://ogp.me/ns#">
    
 
    <meta name="viewport" content="width=1000; " />
