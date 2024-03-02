@@ -22,6 +22,6 @@ export async function GET() {
       let data = await supabase.from("Sessions").insert({turn:"white",moves:[]}).select()
       let id = data!.data![0].id
       let player = await supabase.from("Players").insert({id:id}).select()
-     
+
     return Response.json({game_id:id})
   }

@@ -77,7 +77,6 @@ flex-direction: column;
   text-align: left;
   border-radius: 5em;
   width: 30em;
-  height: 20em;
   top:10em;
   position: absolute;
   left: 0; 
@@ -88,6 +87,14 @@ flex-direction: column;
   border-style: solid;
   border-width:0.3em;
 background-color: rgb(255, 255, 255);
+}
+.pop-up-view button{
+  padding: 0em;
+  text-align: center;
+  text-justify: center;
+  font-size: 1em;
+  width:6em;
+  height:3em;
 }
 .wide-container{
   flex-direction: column;

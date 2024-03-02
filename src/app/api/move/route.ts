@@ -54,11 +54,16 @@ export async function POST(req: NextRequest) {
     .from("Players")
     .select()
     .eq("id", game_id);
-  let session_info = session_entries.data![0];
-  let correct_id = session_info[turn as keyof typeof session_info];
-  if (user_id != correct_id) {
-    return Response.json({ error: "not your turn!" });
-  }
+    let session_info = session_entries.data![0];
+    let isAPlayer = session_info.owner == user_id||session_info.guest == user_id
+    if(!isAPlayer){
+    return Response.json({ error: "You're not a player" });
+    }
+    let role = user_id==session_info.owner?"owner":"guest"
+    if(game_data[role]!=game_data.turn){
+      return Response.json({ error: "not your turn!" });
+    }
+
 
   let {  postBoardBuildDetails, castleConditions } = buildCurrentBoard(moves);
 

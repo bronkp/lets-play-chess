@@ -19,6 +19,9 @@ export type SupaBoard = {
   moves:Move[];
   mate:string|null;
   game_ready:Boolean;
+  started:Boolean;
+ owner:string;
+  guest:string;
 }
 export  type BoardInfo={
     

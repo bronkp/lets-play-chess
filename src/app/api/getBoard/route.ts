@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
     moves: moves,
     game_ready: game_data.game_ready,
     castleConditions:castleCons,
-    pawnToEnPassant:pawnToEnPassant
+    pawnToEnPassant:pawnToEnPassant,
+    started: game_data.started,
+    owner_color:game_data.owner
   });
 }

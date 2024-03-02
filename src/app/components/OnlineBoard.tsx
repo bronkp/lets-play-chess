@@ -1,8 +1,10 @@
+"use client"
 import React, { useEffect, useState } from "react";
 import Cord from "../classes/Cord";
 import * as r from "../ruleset/ruleset";
 import styles from "../page.module.css";
 import _ from "lodash";
+
 import {
   FaChessBishop,
   FaChessKing,
@@ -13,10 +15,12 @@ import {
 } from "react-icons/fa6";
 import { supabase } from "../../../supa/client";
 import { buildCurrentBoard } from "../../../chessFunctions/buildCurrentBoard";
-import { error } from "console";
 import { simpleMove } from "../../../chessFunctions/simpleMove";
 import SharePopUp from "./SharePopUp";
 import { SupaBoard } from "../../../types/types";
+import { FaVolumeMute, FaVolumeUp } from "react-icons/fa";
+const snd = new Audio("/place-piece.mp3");
+
 type KingStore = {
   cords: Cord;
   check: Boolean;
@@ -33,11 +37,13 @@ type BoardProps = {
   params: any;
 };
 const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
+  const [sessionData, setSessionData] = useState<SupaBoard>();
+  const [muted, setMuted] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
   const [gameReady, setGameReady] = useState(false);
   const [hiPiece, setHiPiece] = useState<Cord | null>();
-  const [turnState, setTurnState] = useState(true);
-  const [checkMate, setCheckMate] = useState<string|null>("");
-  const [pawnToUpgrade, setPawnToUpgrade] = useState<LastMove|null>();
+  const [checkMate, setCheckMate] = useState<string | null>("");
+  const [pawnToUpgrade, setPawnToUpgrade] = useState<LastMove | null>();
   const [pawnToEnPass, setPawntoEnPass] = useState<null | Cord>();
   const [history, setHistory] = useState<String[]>();
   const [userColor, setUserColor] = useState("");
@@ -65,7 +71,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   };
   //pass realboard and hipiece as work around for recieving online moves
   async function handleClick(realBoard: Cord[][], tile: Cord, hiPiece: Cord) {
-    console.log("here");
     if (pawnToUpgrade != null) {
       return;
     }
@@ -246,7 +251,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       isMate(boardCopy, "black", blackKing) && setCheckMate("black");
     }
   }
- 
+
   //checks if en passant is possible
   function isEnPassPossible(tile: Cord) {
     if (
@@ -330,7 +335,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     possible.map((move: Move) => {
       boardCopy[move.y][move.x].highlighted = true;
     });
-    console.log("here", boardCopy, possible);
     return boardCopy;
   }
   //tile:position to be moved to
@@ -598,31 +602,28 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     end: Cord | Move,
     upgrade: null | string
   ) {
-    console.log("sendmove details", upgrade);
-    let body = JSON.stringify(
-      {
-        userId: userId,
-        game_id: params.game_id,
-        pawnUpgrade: upgrade,
-        turn: "white",
-        move: JSON.stringify({
-          end: {
-            x: end.x,
-            y: end.y,
-          },
-          start: {
-            x: start.x,
-            y: start.y,
-          },
-        }),
-      }
-
-    )
+    let body = JSON.stringify({
+      userId: userId,
+      game_id: params.game_id,
+      pawnUpgrade: upgrade,
+      turn: "white",
+      move: JSON.stringify({
+        end: {
+          x: end.x,
+          y: end.y,
+        },
+        start: {
+          x: start.x,
+          y: start.y,
+        },
+      }),
+    });
     let data = await fetch("/api/move", {
-      method:"POST",
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-      },body:body
+        "Content-Type": "application/json",
+      },
+      body: body,
     }).then((body) => {
       return body.json();
     });
@@ -636,6 +637,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }
   }
   async function getBoard() {
+    let role = sessionStorage.getItem("role");
     let body = JSON.stringify({
       game_id: params.game_id,
     });
@@ -649,10 +651,18 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }).then((body) => {
       return body.json();
     });
-    console.log(board.game_ready, "here", board);
     if (board.game_ready) {
       setGameReady(true);
     }
+    if (board.started) {
+      setGameStarted(true);
+    }
+    if (role == "owner") {
+      setUserColor(board.owner_color);
+    } else if (role == "guest") {
+      setUserColor(board.owner_color == "white" ? "black" : "white");
+    }
+
     if (board.board) {
       //console.log(board.board?"a":"b")
       setRealBoard(board.board);
@@ -660,8 +670,8 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       setWhtKing(board?.whiteKing);
       setBlkKing(board?.blackKing);
       setPawntoEnPass(board.pawnToEnPassant);
-      console.log("recieved", board);
       setCastleCon(board.castleConditions);
+
       let moves = board.moves;
       if (moves) {
         let moveHistory = formatHistory(moves);
@@ -676,7 +686,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   }, []);
 
   useEffect(() => {
-    console.log("yoyo", params.game_id);
     let channel = supabase.channel("game_move");
 
     channel
@@ -689,7 +698,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
           filter: "id=eq." + params.game_id,
         },
         (payload) => {
-          handleIncomingMove(payload.new as SupaBoard);
+          setSessionData(payload.new as SupaBoard);
         }
       )
       .subscribe();
@@ -711,15 +720,35 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }
     return moveHistory;
   }
-  function handleIncomingMove(sessionData:SupaBoard) {
+  function playSound(muted: Boolean) {
+    try {
+      if (muted == false) {
+        console.log(muted, "isMuted");
+        snd.play().catch((e) => {
+          return;
+        });
+      }
+    } catch (error) {}
+  }
+  function handleIncomingMove(sessionData: SupaBoard) {
+
+    let role = sessionStorage.getItem("role");
+    console.log(role,sessionData)
+    if (role =="owner") {
+      setUserColor(sessionData.owner);
+      sessionStorage.setItem("user_color", sessionData.owner);
+    } else {
+      setUserColor(sessionData.guest);
+      sessionStorage.setItem("user_color", sessionData.guest);
+    }
     if (sessionData.game_ready) setGameReady(true);
+    if (sessionData.started) setGameStarted(true);
     let moves = sessionData.moves as LastMove[];
     let moveHistory = formatHistory(moves);
     setHistory(moveHistory);
     let { postBoardBuildDetails, castleConditions } = buildCurrentBoard(moves);
     setCastleCon(castleConditions);
     let board = postBoardBuildDetails?.board;
-    console.log(postBoardBuildDetails?.blackKing);
     setWhtKing(postBoardBuildDetails?.whiteKing!);
     setBlkKing(postBoardBuildDetails?.blackKing!);
     setRealBoard(board);
@@ -731,6 +760,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     let userColor = sessionStorage.getItem("user_color");
     let gameId = sessionStorage.getItem("game_id");
     let sessionId = sessionStorage.getItem("session_id");
+
     let body = JSON.stringify({
       game_id: params.game_id,
     });
@@ -744,46 +774,31 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
         return data.json();
       });
       if (data.error) {
-        console.log(data.error);
+        console.log("error");
+        console.log(data.error, "error");
+        sessionStorage.setItem("spectating","true")
         //TODO: SET ERROR RESULT
       } else {
+        console.log("data", data);
         sessionStorage.setItem("session_id", data.id);
         sessionStorage.setItem("user_color", data.color);
+        sessionStorage.setItem("role", data.role);
         setUserId(data.id);
-        setUserColor(data.color);
       }
     } else if (sessionId) {
       setUserId(sessionId);
-      setUserColor(userColor);
     }
   }
   useEffect(() => {
     getUserId();
   }, []);
-
-  // async function cheat() {
-  //   let data = await fetch("/api/move", {
-  //     headers: {
-  //       userId: userId,
-  //       game_id: params.game_id,
-  //       pawnUpgrade: null,
-  //       turn: "white",
-  //       move: JSON.stringify({
-  //         end: {
-  //           x: 2,
-  //           y: 7,
-  //         },
-  //         start: {
-  //           x: 4,
-  //           y: 7,
-  //         },
-  //       }),
-  //     },
-  //   }).then((body) => {
-  //     return body.json();
-  //   });
-  //   console.log(data);
-  // }
+  //muted variable bundled and not updated when called
+  useEffect(() => {
+    if (sessionData) {
+      handleIncomingMove(sessionData);
+      playSound(muted);
+    }
+  }, [sessionData]);
   function preUpgradeVisual(board: Cord[][], start: Cord, end: Cord) {
     board = simpleMove(board, start, end);
     board = clearHighlights(board);
@@ -791,26 +806,25 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   }
   return (
     <>
-      {!gameReady && <SharePopUp link={params.game_id} />}
+      {!gameStarted && (
+        <SharePopUp
+          gameIsReady={gameReady}
+          setUserColor={setUserColor}
+          userColor={userColor}
+          link={params.game_id}
+          role={sessionStorage.getItem("role")!}
+          userId={userId}
+        />
+      )}
       {pawnToUpgrade?.end!.x!} {pawnToUpgrade?.end!.y!}
+      <div onClick={() => setMuted(!muted)}>
+        {muted ? (
+          <FaVolumeMute fontSize="0.4em" style={{ cursor: "pointer" }} />
+        ) : (
+          <FaVolumeUp fontSize="0.4em" style={{ cursor: "pointer" }} />
+        )}
+      </div>
       <div className={styles["button-container"]}>
-        {/* <div>
-          {turn == "white" ? "White's" : "Black's"} Turn {debug && "* DEBUG"}
-        </div> */}
-        {/* <button
-          onClick={() => {
-            cheat();
-          }}
-        >
-          Cheat
-        </button> */}
-        {/* <button
-          onClick={() => {
-            setDebug(!debug);
-          }}
-        >
-          Debug Info
-        </button> */}
         {debug && <p>User: {userId}</p>}
         {debug && <p>Game: {params.game_id}</p>}
 
@@ -819,7 +833,8 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
         )}
       </div>
       <div className={styles["wide-container"]}>
-        <h1>{userColor == turn ? "Your Turn" : "Opponent's Turn"}</h1>
+       {sessionStorage.getItem("spectating")=="true"?<h1>Spectating</h1>:
+        <h1>{userColor == turn ? "Your Turn" : "Opponent's Turn"}</h1>}
         <div className={styles["board-container" as keyof typeof styles]}>
           <div className={styles.column}>
             <div className={styles.row}>
