@@ -44,7 +44,6 @@ export async function POST(req: NextRequest) {
     blackKing = postBoardBuildDetails?.blackKing;
     castleCons = castleConditions
     pawnToEnPassant = postBoardBuildDetails?.pawnToEnPassant
-    console.log('final en',pawnToEnPassant)
   }
   return Response.json({
     board: board,

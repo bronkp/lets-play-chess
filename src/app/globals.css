@@ -1,4 +1,19 @@
 button{
     width: 8em;
     cursor: pointer;
+    background-color: rgb(255, 255, 255);
+    padding: 1em;
+    border-radius: 1em;
+    border-color: black;
+    border-style: solid;
+    font-size: 2em;
+    transition: 0.3s;
+
+}
+button:hover{
+    border-color: white;
+    transition: 0.3s;
+}
+button:disabled{
+    border-color: white;
 }

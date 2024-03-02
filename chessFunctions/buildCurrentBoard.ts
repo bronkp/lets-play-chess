@@ -55,7 +55,6 @@ export function buildCurrentBoard(moves: Move[]) {
       check ? (whiteKing.check = true) : (whiteKing.check = false);
       check = isCheck(board, "black", blackKing.cords);
       check ? (blackKing.check = true) : (blackKing.check = false);
-      console.clear()
       if (moveIsKing) {
         if (isWhite) {
           let check = isCheck(board, "white", endCord);
@@ -79,39 +78,3 @@ export function buildCurrentBoard(moves: Move[]) {
   return { postBoardBuildDetails, castleConditions };
 }
 
-
-function tryCastle(board: Cord[][], start: Cord, end: Cord) {
-  if (start.x - end.x == 2 || end.x - start.x == 2) {
-    let direction = start.x - end.x == 2 ? "left" : "right";
-    if (direction == "left") {
-      board = movePiece(
-        _.cloneDeep(board),
-        board[start!.y][start!.x - 4],
-        board[start!.y][start!.x - 1]
-      );
-    } else {
-      board = movePiece(
-        _.cloneDeep(board),
-        board[start!.y][start!.x + 3],
-        board[start!.y][start!.x + 1]
-      );
-    }
-  }
-  return board;
-}
-function tryEnPassant(board: Cord[][], start: Cord, end: Cord) {
-  let diagonalMove = end.x != start.x;
-  let takeEmpty = end.piece.name == "None";
-  if (diagonalMove && takeEmpty) {
-    board[start.y][end.x].piece = r.None;
-  }
-  return board;
-}
-function movePiece(board: Cord[][], start: Cord, end: Cord) {
-  board[end.y][end.x].piece = start!.piece;
-  board[end.y][end.x].pieceColor = start!.pieceColor;
-  board[start!.y][start!.x].piece = r.None;
-  board[start!.y][start!.x].pieceColor = "None";
-
-  return board;
-}

@@ -794,9 +794,9 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       {!gameReady && <SharePopUp link={params.game_id} />}
       {pawnToUpgrade?.end!.x!} {pawnToUpgrade?.end!.y!}
       <div className={styles["button-container"]}>
-        <div>
+        {/* <div>
           {turn == "white" ? "White's" : "Black's"} Turn {debug && "* DEBUG"}
-        </div>
+        </div> */}
         {/* <button
           onClick={() => {
             cheat();
@@ -804,13 +804,13 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
         >
           Cheat
         </button> */}
-        <button
+        {/* <button
           onClick={() => {
             setDebug(!debug);
           }}
         >
           Debug Info
-        </button>
+        </button> */}
         {debug && <p>User: {userId}</p>}
         {debug && <p>Game: {params.game_id}</p>}
 

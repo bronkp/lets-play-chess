@@ -1,23 +1,32 @@
-import { useRouter } from 'next/navigation'
-import React from 'react'
+import { useRouter } from "next/navigation";
+import styles from "../page.module.css"
+import React, { useState } from "react";
+import { FaChessPawn } from "react-icons/fa6";
 
-const CreateBoard:React.FC = () => {
-  const router = useRouter()
-    async function createGame(){
-      let data = await fetch("/api/create").then((body)=>{return body.json()})
-      console.log(data)
-      router.push("/game/"+data.game_id)
-      }
+const CreateBoard: React.FC = () => {
+  const [loading,setLoading]=useState(false)
+  const router = useRouter();
+  async function createGame() {
+    setLoading(true)
+    let data = await fetch("/api/create").then((body) => {
+      return body.json();
+    });
+    router.push("/game/" + data.game_id);
+  }
   return (
-    <div>Home
-
-<button onClick={()=>{
-createGame()
-   }}>Create Game</button>
-
-
+    <div className={styles["create-container"]}>
+  <h1><FaChessPawn color="black" fontSize="3em"/>Easy Chess<FaChessPawn color="black" fontSize="3em"/></h1>
+      
+      <button
+      disabled={loading}
+        onClick={() => {
+          createGame();
+        }}
+      >
+        {loading?"Loading...":"Create Game"}
+      </button>
     </div>
-  )
-}
+  );
+};
 
-export default CreateBoard
+export default CreateBoard;

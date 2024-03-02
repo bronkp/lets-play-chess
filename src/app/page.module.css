@@ -11,8 +11,8 @@ flex-direction: column;
   display: flex;
   justify-content: center;
   align-items: center;
-  width:5em;
-  height:5em;
+  min-width:5em;
+  min-height:5em;
   
 }
 .board-container{
@@ -76,15 +76,52 @@ flex-direction: column;
   display: flex;
   text-align: left;
   border-radius: 5em;
-  width: 60em;
+  width: 30em;
   height: 20em;
   top:10em;
-  position: fixed;
-background-color: rgb(251, 249, 249);
+  position: absolute;
+  left: 0; 
+  right: 0; 
+  margin-left: auto; 
+  margin-right: auto; 
+  border-color: black;
+  border-style: solid;
+  border-width:0.3em;
+background-color: rgb(255, 255, 255);
 }
 .wide-container{
   flex-direction: column;
   justify-content: center;
   align-items: center;
   display: flex;
+}
+.create-container{
+  position: absolute;
+  left: 0; 
+  right: 0; 
+  margin-left: auto; 
+  margin-right: auto; 
+  width: 50em;
+  border-radius: 5em;
+  padding: 3em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background-color: rgb(238, 238, 238);
+}
+.grid{
+  top: 0;
+  left:0;
+  position:fixed;
+  z-index: -1;
+  display: flex;
+  flex-wrap: wrap;
+}
+.home-tile{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width:20vw;
+  min-height:20vw;
 }
