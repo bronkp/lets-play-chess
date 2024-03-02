@@ -118,8 +118,9 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       ];
       let fakeBoard = buildCurrentBoard(fakeMoves);
       setRealBoard(fakeBoard.postBoardBuildDetails?.board)
+      setTurn(turn=="white"?"black":"white")
       let valid = await sendMove(hiPiece, tile, null);
-      //valid &&handleHighlightedClick(boardCopy, tile, hiPiece);
+      !valid&&setTurn(turn)
     }
   }
   //highlights during click event different function than highlighting board given
@@ -460,7 +461,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       console.log(data.error);
       return false;
     } else {
-      console.log(data, "move made");
       return true;
     }
   }
@@ -492,7 +492,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }
 
     if (board.board) {
-      //console.log(board.board?"a":"b")
       setRealBoard(board.board);
       setTurn(board.turn);
       setWhtKing(board?.whiteKing);
@@ -552,7 +551,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   function playSound(muted: Boolean) {
     try {
       if (muted == false) {
-        console.log(muted, "isMuted");
         snd.play().catch((e) => {
           return;
         });
@@ -561,7 +559,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   }
   function handleIncomingMove(sessionData: SupaBoard) {
     let role = sessionStorage.getItem("role");
-    console.log(role, sessionData);
     if (role == "owner") {
       setUserColor(sessionData.owner);
       sessionStorage.setItem("user_color", sessionData.owner);
@@ -602,12 +599,10 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
         return data.json();
       });
       if (data.error) {
-        console.log("error");
         console.log(data.error, "error");
         sessionStorage.setItem("spectating", "true");
         //TODO: SET ERROR RESULT
       } else {
-        console.log("data", data);
         sessionStorage.setItem("session_id", data.id);
         sessionStorage.setItem("user_color", data.color);
         sessionStorage.setItem("role", data.role);
