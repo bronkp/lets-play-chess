@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useEffect, useState } from "react";
 import Cord from "../classes/Cord";
 import * as r from "../ruleset/ruleset";
@@ -112,6 +112,12 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       setPawnToUpgrade({ start: hiPiece, end: tile });
       setRealBoard(preUpgradeVisual(_.cloneDeep(realBoard!), hiPiece, tile));
     } else {
+      let fakeMoves = [
+        ...(sessionData?.moves ? sessionData.moves : []),
+        { start: { x: hiPiece.x, y: hiPiece.y },end:{x:tile.x,y:tile.y}},
+      ];
+      let fakeBoard = buildCurrentBoard(fakeMoves);
+      setRealBoard(fakeBoard.postBoardBuildDetails?.board)
       let valid = await sendMove(hiPiece, tile, null);
       //valid &&handleHighlightedClick(boardCopy, tile, hiPiece);
     }
@@ -159,99 +165,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     );
     return boardCopy;
   }
-  function updateKingState(
-    whiteK: KingStore,
-    blackK: KingStore,
-    clickedTile: Cord,
-    highlightedPieceColor: string
-  ) {
-    if (highlightedPieceColor == "black") {
-      setBlkKing({
-        ...blkKing,
-        cords: { ...clickedTile } as Cord,
-      });
-      blackK = {
-        ...blkKing,
-        cords: { ...clickedTile } as Cord,
-      };
-      setCastleCon({
-        ...castleCon,
-        black: { ...castleCon.black, king: false },
-      });
-    }
-    if (highlightedPieceColor == "white") {
-      setWhtKing({
-        ...whtKing,
-        cords: { ...clickedTile } as Cord,
-      });
-      whiteK = {
-        ...whtKing,
-        cords: { ...clickedTile } as Cord,
-      };
-      setCastleCon({
-        ...castleCon,
-        white: { ...castleCon.white, king: false },
-      });
-    }
-    setHiPiece(null);
-    return { whiteK, blackK };
-  }
-  function updateRookState(
-    highlightedTileIndex: number,
-    highlightedPieceColor: string
-  ) {
-    let rookInStartingPosition =
-      highlightedTileIndex == 0 || highlightedTileIndex == 7;
-    let rookInLeftPosition = highlightedTileIndex == 0;
-    let rookInRightPosition = highlightedTileIndex == 7;
-    if (highlightedPieceColor == "black" && rookInStartingPosition) {
-      rookInLeftPosition &&
-        setCastleCon({
-          ...castleCon,
-          black: { ...castleCon.black, left: false },
-        });
-      rookInRightPosition &&
-        setCastleCon({
-          ...castleCon,
-          black: { ...castleCon.black, right: false },
-        });
-    } else if (rookInStartingPosition) {
-      rookInLeftPosition &&
-        setCastleCon({
-          ...castleCon,
-          white: { ...castleCon.white, left: false },
-        });
-      rookInRightPosition &&
-        setCastleCon({
-          ...castleCon,
-          white: { ...castleCon.white, right: false },
-        });
-    }
-  }
-  //checks for check mates and checks for red highlighting and winning the game
-  function kingVerify(
-    boardCopy: Cord[][],
-    whiteKing: KingStore,
-    blackKing: KingStore
-  ) {
-    let whiteCheck = isCheck(boardCopy, "white", whiteKing.cords);
-    let blackCheck = isCheck(boardCopy, "black", blackKing.cords);
-    setBlkKing({
-      ...blackKing,
-      check: blackCheck,
-    });
-
-    setWhtKing({
-      ...whiteKing,
-      check: whiteCheck,
-    });
-    if (whiteCheck) {
-      isMate(boardCopy, "white", whiteKing) && setCheckMate("white");
-    } else if (blackCheck) {
-      isMate(boardCopy, "black", blackKing) && setCheckMate("black");
-    }
-  }
-
   //checks if en passant is possible
   function isEnPassPossible(tile: Cord) {
     if (
@@ -267,48 +180,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   }
   //Goes through each possible move the checked kings pieces could make to see if any
   //moves removes the check. Returns a boolean of if king is mated
-  function isMate(boardCopy: Cord[][], pieceColor: string, king: KingStore) {
-    //for rows on the board
-    for (let row = 0; row < 8; row++) {
-      //for each tile in a row
-      for (let tile = 0; tile < 8; tile++) {
-        //cordinate being checked
-        let search = boardCopy![row][tile];
-        //piece is of search color
-        if (search.piece.name != "None" && search.pieceColor == pieceColor) {
-          //all moves a piece could make
-          let getMoves =
-            r[
-              boardCopy![search.y][search.x].piece.name as keyof typeof r
-            ].getRules();
-
-          let moves = getMoves(
-            search.pieceColor,
-            search.x,
-            search.y,
-            boardCopy
-          );
-          //for each move of possible moves
-          for (let move = 0; move < moves.length; move++) {
-            let copy = _.cloneDeep(boardCopy!);
-            let moveTile = copy[moves[move].y][moves[move].x];
-            //makes board for testing check
-            copy = movePiece(moveTile, copy, search);
-            //checks if king piece is being moved to give updated king cordinate
-            let check = isCheck(
-              copy,
-              pieceColor,
-              search.piece.name == "King" ? moveTile : king.cords
-            );
-            if (!check) {
-              return false;
-            }
-          }
-        }
-      }
-    }
-    return true;
-  }
   function highlightPieces(
     possible: Move[],
     boardCopy: Cord[][],
@@ -552,51 +423,8 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }
     return check;
   }
-  // function handleEnemyMove(move) {
-  //   console.log(move);
-  //   let boardCopy = _.cloneDeep(realBoard);
-  //   let start = move.start;
-  //   let end = boardCopy[move.end.y][move.end.x];
-  //   boardCopy = highlightPieces([end], boardCopy!, whtKing, end);
-  //   console.log(boardCopy);
-  //   handleClick(boardCopy, end, boardCopy[start.y][start.x]);
-  // }
-
-  // useEffect(() => {
-  //   console.log(
-  //     "last",
-  //     JSON.stringify(lastLocalMove),
-  //     JSON.stringify(lastMove)
-  //   );
-  //   if (lastMove && realBoard) {
-  //     JSON.stringify(lastLocalMove) != JSON.stringify(lastMove) &&
-  //       handleEnemyMove(lastMove);
-  //   }
-  // }, [lastMove]);
 
   const [realBoard, setRealBoard] = useState<Cord[][]>();
-
-  async function legalMove() {
-    let data = await fetch("/api/move", {
-      headers: {
-        game_id: params.game_id,
-        turn: "white",
-        move: JSON.stringify({
-          end: {
-            x: 7,
-            y: 5,
-          },
-          start: {
-            x: 6,
-            y: 7,
-          },
-        }),
-      },
-    }).then((body) => {
-      return body.json();
-    });
-    setRealBoard(data.message);
-  }
   async function sendMove(
     start: Cord | Move,
     end: Cord | Move,
@@ -707,6 +535,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       supabase.removeChannel(channel);
     };
   }, [supabase]);
+
   function formatHistory(moves: LastMove[]) {
     let moveHistory = [];
     for (let i = 0; i < moves.length; i++) {
@@ -731,10 +560,9 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     } catch (error) {}
   }
   function handleIncomingMove(sessionData: SupaBoard) {
-
     let role = sessionStorage.getItem("role");
-    console.log(role,sessionData)
-    if (role =="owner") {
+    console.log(role, sessionData);
+    if (role == "owner") {
       setUserColor(sessionData.owner);
       sessionStorage.setItem("user_color", sessionData.owner);
     } else {
@@ -776,7 +604,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       if (data.error) {
         console.log("error");
         console.log(data.error, "error");
-        sessionStorage.setItem("spectating","true")
+        sessionStorage.setItem("spectating", "true");
         //TODO: SET ERROR RESULT
       } else {
         console.log("data", data);
@@ -804,6 +632,9 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     board = clearHighlights(board);
     return board;
   }
+
+ 
+  
   return (
     <>
       {!gameStarted && (
@@ -833,8 +664,11 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
         )}
       </div>
       <div className={styles["wide-container"]}>
-       {sessionStorage.getItem("spectating")=="true"?<h1>Spectating</h1>:
-        <h1>{userColor == turn ? "Your Turn" : "Opponent's Turn"}</h1>}
+        {sessionStorage.getItem("spectating") == "true" ? (
+          <h1>Spectating</h1>
+        ) : (
+          <h1>{userColor == turn ? "Your Turn" : "Opponent's Turn"}</h1>
+        )}
         <div className={styles["board-container" as keyof typeof styles]}>
           <div className={styles.column}>
             <div className={styles.row}>
