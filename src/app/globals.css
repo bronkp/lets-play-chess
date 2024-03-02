@@ -17,3 +17,6 @@ button:hover{
 button:disabled{
     border-color: white;
 }
+body{
+    overflow-x: hidden;
+}

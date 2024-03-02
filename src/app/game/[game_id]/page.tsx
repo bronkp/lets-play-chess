@@ -14,8 +14,8 @@ export default function Page({ params }: { params: { game_id: string } }) {
 
   return (
     <>
-      <div>
-        <IconContext.Provider value={{ style: { height:"3em",width:"3em" } }}> 
+      <div >
+        <IconContext.Provider value={{ style: { height:"3vw",width:"3vw" } }}> 
 
         {/* <button onClick={()=>sendMove()}>Send</button> */}
         <OnlineBoard
