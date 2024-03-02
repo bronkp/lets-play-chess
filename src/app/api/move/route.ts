@@ -9,6 +9,7 @@ import _ from "lodash";
 import { isCheck } from "../../../../chessFunctions/isCheck";
 import { forceComplexMove } from "../../../../chessFunctions/forceComplexMove";
 import { NextRequest } from "next/server";
+import { Blaka } from "next/font/google";
 export async function POST(req: NextRequest) {
   const cookieStore = cookies();
   const supabase = createServerClient(
@@ -88,14 +89,12 @@ export async function POST(req: NextRequest) {
   if (legal) {
     moves.push(move!);
     let postMove = forceComplexMove(_.cloneDeep(board!),move,postBoardBuildDetails?.whiteKing!,postBoardBuildDetails?.blackKing!)
-    
     let whiteCheck = isCheck(_.cloneDeep(postMove.board!),"white",postBoardBuildDetails?.whiteKing.cords!)
     let blackCheck = isCheck(_.cloneDeep(postMove.board!),"black",postBoardBuildDetails?.blackKing.cords!)
     if(blackCheck){
       let checkMate = isMate(_.cloneDeep(postMove.board!),"black",_.cloneDeep(postBoardBuildDetails!.blackKing))
       if(checkMate){
         mate = "black"
-      
     }}
     else if(whiteCheck){
       let checkMate = isMate(_.cloneDeep(postMove.board!),"white", _.cloneDeep(postBoardBuildDetails!.whiteKing))

@@ -5,12 +5,15 @@ import { simpleMove } from "./simpleMove";
 import _ from "lodash";
 import { tryCastle } from "./tryCastle";
 import * as r from "../src/app/ruleset/ruleset";
+import { isCheck } from "./isCheck";
 export function forceComplexMove(
   board: Cord[][],
   move: Move,
   whiteKing: KingStore,
   blackKing: KingStore
 ) {
+  let movedPieceColor = board[move.start.y][move.start.x].pieceColor
+  let movedPieceName = board[move.start.y][move.start.x].piece.name
   let start = board[move.start.y][move.start.x];
   let end = board[move.end.y][move.end.x];
   let pieceName = start.piece.name;
@@ -32,6 +35,25 @@ export function forceComplexMove(
       pawnToEnPassant = board[end.y][end.x];
     }
   }
+  let isWhite = movedPieceColor == "white" ? true : false;
+  let moveIsKing = movedPieceName == "King";
+  let endCord = board[move.end.y][move.end.x];
+  let check = isCheck(board, "white", whiteKing.cords);
+  check ? (whiteKing.check = true) : (whiteKing.check = false);
+  check = isCheck(board, "black", blackKing.cords);
+  check ? (blackKing.check = true) : (blackKing.check = false);
+  if (moveIsKing) {
+    if (isWhite) {
+      let check = isCheck(board, "white", endCord);
+      check ? (whiteKing.check = true) : (whiteKing.check = false);
+      whiteKing.cords = endCord;
+    } else {
+      let check = isCheck(board, "black", endCord);
+      check ? (blackKing.check = true) : (blackKing.check = false);
+      blackKing.cords = endCord;
+    }
+  }
+
   return {
     board: board,
     whiteKing: whiteKing,
