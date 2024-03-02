@@ -9,6 +9,7 @@ const TiledBackground = () => {
     <div className={styles.grid}>
       {arr.map((i) => (
         <div
+        key={i}
           style={{
             backgroundColor: i % 2 ? "rgb(212, 212, 212)" : "rgb(79, 79, 79)",
           }}
