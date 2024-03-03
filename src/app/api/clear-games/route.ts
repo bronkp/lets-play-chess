@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     }
   );
   const authHeader = req.headers.get('authorization');
-  if(authHeader!=process.env.CRON_KEY ){
+  if(authHeader!=process.env.CRON_SECRET ){
   return Response.json({ error: "incorrect key" });
   }
   let yesterday = new Date(
