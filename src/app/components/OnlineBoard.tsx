@@ -498,7 +498,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       setBlkKing(board?.blackKing);
       setPawntoEnPass(board.pawnToEnPassant);
       setCastleCon(board.castleConditions);
-
+      setCheckMate(board.mate)
       let moves = board.moves;
       if (moves) {
         let moveHistory = formatHistory(moves);
@@ -653,17 +653,16 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       <div className={styles["button-container"]}>
         {debug && <p>User: {userId}</p>}
         {debug && <p>Game: {params.game_id}</p>}
-
-        {checkMate && (
-          <h1>Game Over: {checkMate == "white" ? "Black" : "White"} Has Won</h1>
-        )}
       </div>
       <div className={styles["wide-container"]}>
-        {sessionStorage.getItem("spectating") == "true" ? (
-          <h1>Spectating</h1>
+        <h1>
+        
+        {checkMate?"Game Over:"+checkMate == "white" ? "Black " : "White "+ "Has Won":sessionStorage.getItem("spectating") == "true" ? (
+          "Spectating"
         ) : (
-          <h1>{userColor == turn ? "Your Turn" : "Opponent's Turn"}</h1>
+          userColor == turn ? "Your Turn" : "Opponent's Turn"
         )}
+        </h1>
         <div className={styles["board-container" as keyof typeof styles]}>
           <div className={styles.column}>
             <div className={styles.row}>

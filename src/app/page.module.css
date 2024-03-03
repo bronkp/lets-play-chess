@@ -91,6 +91,7 @@ background-color: rgb(255, 255, 255);
 }
 .pop-up-view button{
   padding: 0em;
+  margin-right: 1em;
   text-align: center;
   text-justify: center;
   font-size: 1em;

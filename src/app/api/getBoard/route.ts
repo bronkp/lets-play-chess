@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
     castleConditions:castleCons,
     pawnToEnPassant:pawnToEnPassant,
     started: game_data.started,
-    owner_color:game_data.owner
+    owner_color:game_data.owner,
+    mate:game_data.mate
   });
 }

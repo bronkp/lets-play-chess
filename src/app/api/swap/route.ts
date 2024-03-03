@@ -30,9 +30,14 @@ export async function POST(req:  NextRequest) {
     const original = await supabase.from("Sessions").select().eq("id",game_id)
     const originalData = original?.data?.[0]
     const owner = userData.data?.[0]!.owner
+    const started = originalData.data?.[0].started
     let ownerColor = originalData.owner
     if(owner!=userId){
         return Response.json({error:"You are not owner of this session."})
+    }
+    if(started){
+      return Response.json({error:"Game has already started!"})
+
     }
     if(ownerColor=="white"){
         let data = await supabase.from("Sessions").update({owner:"black",guest:"white"}).eq("id",game_id)
