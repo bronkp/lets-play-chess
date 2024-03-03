@@ -56,6 +56,6 @@ export async function POST(req: NextRequest) {
     pawnToEnPassant:pawnToEnPassant,
     started: game_data.started,
     owner_color:game_data.owner,
-    mate:game_data.mate
+    mate:game_data?.mate
   });
 }
