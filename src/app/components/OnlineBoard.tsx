@@ -37,6 +37,8 @@ type BoardProps = {
   params: any;
 };
 const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
+  const [lastMoveCords, setLastMoveCords] = useState<LastMove>();
+  const [isMobile, setIsMobile] = useState(false);
   const [sessionData, setSessionData] = useState<SupaBoard>();
   const [muted, setMuted] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
@@ -81,6 +83,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     let boardCopy: Cord[][] = _.cloneDeep(realBoard!);
     if (!clickedIsHighlighted) {
       if (clickedPieceName == "None") {
+        setHiPiece(null);
         boardCopy = clearHighlights(boardCopy);
         setRealBoard(boardCopy);
         return;
@@ -114,13 +117,19 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     } else {
       let fakeMoves = [
         ...(sessionData?.moves ? sessionData.moves : []),
-        { start: { x: hiPiece.x, y: hiPiece.y },end:{x:tile.x,y:tile.y}},
+        {
+          start: { x: hiPiece.x, y: hiPiece.y },
+          end: { x: tile.x, y: tile.y },
+        },
       ];
       let fakeBoard = buildCurrentBoard(fakeMoves);
-      setRealBoard(fakeBoard.postBoardBuildDetails?.board)
-      setTurn(turn=="white"?"black":"white")
+      setLastMoveCords({ ...fakeMoves[fakeMoves.length - 1] });
+      setHiPiece(null);
+      setRealBoard(fakeBoard.postBoardBuildDetails?.board);
+
+      setTurn(turn == "white" ? "black" : "white");
       let valid = await sendMove(hiPiece, tile, null);
-      !valid&&setTurn(turn)
+      !valid && setTurn(turn);
     }
   }
   //highlights during click event different function than highlighting board given
@@ -498,7 +507,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       setBlkKing(board?.blackKing);
       setPawntoEnPass(board.pawnToEnPassant);
       setCastleCon(board.castleConditions);
-      setCheckMate(board.mate)
+      setCheckMate(board.mate);
       let moves = board.moves;
       if (moves) {
         let moveHistory = formatHistory(moves);
@@ -510,6 +519,11 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   }
   useEffect(() => {
     let board = getBoard();
+    setIsMobile(
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(
+        navigator.userAgent
+      )
+    );
   }, []);
 
   useEffect(() => {
@@ -558,6 +572,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     } catch (error) {}
   }
   function handleIncomingMove(sessionData: SupaBoard) {
+    setHiPiece(null);
     let role = sessionStorage.getItem("role");
     if (role == "owner") {
       setUserColor(sessionData.owner);
@@ -568,7 +583,9 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }
     if (sessionData.game_ready) setGameReady(true);
     if (sessionData.started) setGameStarted(true);
+
     let moves = sessionData.moves as LastMove[];
+    setLastMoveCords(sessionData.moves[sessionData.moves.length - 1]);
     let moveHistory = formatHistory(moves);
     setHistory(moveHistory);
     let { postBoardBuildDetails, castleConditions } = buildCurrentBoard(moves);
@@ -628,8 +645,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     return board;
   }
 
- 
-  
   return (
     <>
       {!gameStarted && (
@@ -656,14 +671,24 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       </div>
       <div className={styles["wide-container"]}>
         <h1>
-        
-        {checkMate?"Game Over:"+checkMate == "white" ? "Black " : "White "+ "Has Won":sessionStorage.getItem("spectating") == "true" ? (
-          "Spectating"
-        ) : (
-          userColor == turn ? "Your Turn" : "Opponent's Turn"
-        )}
+          {checkMate
+            ? "Game Over:" + checkMate == "white"
+              ? "Black "
+              : "White " + "Has Won"
+            : sessionStorage.getItem("spectating") == "true"
+            ? "Spectating"
+            : userColor == turn
+            ? "Your Turn"
+            : "Opponent's Turn"}
         </h1>
-        <div className={styles["board-container" as keyof typeof styles]}>
+
+        <div
+          style={{
+            alignItems: isMobile ? "center" : "",
+            flexDirection: isMobile ? "column" : "row",
+          }}
+          className={styles["board-container" as keyof typeof styles]}
+        >
           <div className={styles.column}>
             <div className={styles.row}>
               <div
@@ -731,6 +756,12 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
                             ? "rgb(255, 82, 90)"
                             : tile.highlighted
                             ? "rgb(101, 197, 252)"
+                            : ((tile.x == lastMoveCords?.start.x &&
+                                tile.y == lastMoveCords?.start.y) ||
+                                (tile.x == lastMoveCords?.end.x &&
+                                  tile.y == lastMoveCords?.end.y)) &&
+                              hiPiece == null
+                            ? "rgb(194, 242, 226)"
                             : tile.tileColor == "light"
                             ? "rgb(255, 206, 153)"
                             : "rgb(77, 48, 17)",

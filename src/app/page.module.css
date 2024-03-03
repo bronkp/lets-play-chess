@@ -8,6 +8,7 @@ flex-direction: column;
   flex-direction: row;
 }
 .tile{
+  user-select: none;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -27,8 +28,8 @@ flex-direction: column;
 .history{
   text-align: center;
   max-height: 45em;
-  width:14em;
-  max-width: 10em;
+  width:20em;
+  max-width: 15em;
   overflow-x: auto-y;
   overflow-y: scroll;
 }
