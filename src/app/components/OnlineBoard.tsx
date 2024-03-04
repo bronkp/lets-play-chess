@@ -17,29 +17,17 @@ import { supabase } from "../../../supa/client";
 import { buildCurrentBoard } from "../../../chessFunctions/buildCurrentBoard";
 import { simpleMove } from "../../../chessFunctions/simpleMove";
 import SharePopUp from "./SharePopUp";
-import { SupaBoard } from "../../../types/types";
+import { KingStore, MoveCord, SupaBoard, Move } from '../../../types/types';
 import { FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 import { isCheck } from "../../../chessFunctions/isCheck";
 import { castleMoves } from "../../../chessFunctions/castleMoves";
 const snd = new Audio("/place-piece.mp3");
 
-type KingStore = {
-  cords: Cord;
-  check: Boolean;
-};
-type Move = {
-  x: number;
-  y: number;
-};
-type LastMove = {
-  start: Move;
-  end: Move;
-};
 type BoardProps = {
   params: any;
 };
 const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
-  const [lastMoveCords, setLastMoveCords] = useState<LastMove>();
+  const [lastMoveCords, setLastMoveCords] = useState<Move>();
   const [isMobile, setIsMobile] = useState(false);
   const [sessionData, setSessionData] = useState<SupaBoard>();
   const [muted, setMuted] = useState(false);
@@ -47,7 +35,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   const [gameReady, setGameReady] = useState(false);
   const [hiPiece, setHiPiece] = useState<Cord | null>();
   const [checkMate, setCheckMate] = useState<string | null>("");
-  const [pawnToUpgrade, setPawnToUpgrade] = useState<LastMove | null>();
+  const [pawnToUpgrade, setPawnToUpgrade] = useState<Move | null>();
   const [pawnToEnPass, setPawntoEnPass] = useState<null | Cord>();
   const [history, setHistory] = useState<String[]>();
   const [userColor, setUserColor] = useState("");
@@ -130,6 +118,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       !valid && setTurn(turn);
     }
   }
+  //TODO convert to using get possible moves global function
   //highlights during click event different function than highlighting board given
   function handleHighlights(boardCopy: Cord[][], tile: Cord) {
     let clickedRowIndex = tile.y;
@@ -189,13 +178,13 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   //Goes through each possible move the checked kings pieces could make to see if any
   //moves removes the check. Returns a boolean of if king is mated
   function highlightPieces(
-    possible: Move[],
+    possible: MoveCord[],
     boardCopy: Cord[][],
     king: KingStore,
     start: Cord
   ) {
     //filters out moves that would put own king in check
-    possible = possible.filter((move: Move) => {
+    possible = possible.filter((move: MoveCord) => {
       //lodash deep copy cause no native way to copy object with methods
       let copy = _.cloneDeep(boardCopy!);
       let end = copy[move.y][move.x]
@@ -211,7 +200,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     });
 
     //highlights all possible moves
-    possible.map((move: Move) => {
+    possible.map((move: MoveCord) => {
       boardCopy[move.y][move.x].highlighted = true;
     });
     return boardCopy;
@@ -303,8 +292,8 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
  
 
   async function sendMove(
-    start: Cord | Move,
-    end: Cord | Move,
+    start: Cord | MoveCord,
+    end: Cord | MoveCord,
     upgrade: null | string
   ) {
     let body = JSON.stringify({
@@ -385,7 +374,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }
   }
 
-  function formatHistory(moves: LastMove[]) {
+  function formatHistory(moves: Move[]) {
     let moveHistory = [];
     for (let i = 0; i < moves.length; i++) {
       let move = moves[i];
@@ -420,7 +409,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     if (sessionData.game_ready) setGameReady(true);
     if (sessionData.started) setGameStarted(true);
 
-    let moves = sessionData.moves as LastMove[];
+    let moves = sessionData.moves as Move[];
     setLastMoveCords(sessionData.moves[sessionData.moves.length - 1]);
     let moveHistory = formatHistory(moves);
     setHistory(moveHistory);
