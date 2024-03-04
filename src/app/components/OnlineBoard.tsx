@@ -20,6 +20,7 @@ import SharePopUp from "./SharePopUp";
 import { SupaBoard } from "../../../types/types";
 import { FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 import { isCheck } from "../../../chessFunctions/isCheck";
+import { castleMoves } from "../../../chessFunctions/castleMoves";
 const snd = new Audio("/place-piece.mp3");
 
 type KingStore = {
@@ -104,10 +105,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     let valid = await sendMove(start!, end!, key);
     setPawnToUpgrade(null);
   }
-  async function handleMoveAttempt(
-    tile: Cord,
-    hiPiece: Cord,
-  ) {
+  async function handleMoveAttempt(tile: Cord, hiPiece: Cord) {
     let isPawn = hiPiece.piece.name == "Pawn";
     let end = hiPiece.pieceColor == "white" ? 0 : 7;
     let isEnd = tile.y == end;
@@ -159,7 +157,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
         boardCopy,
         tile.pieceColor,
         tile,
-        tile.pieceColor == "white" ? whtKing : blkKing
+        tile.pieceColor == "white" ? whtKing : blkKing,castleCon
       );
       if (moves) {
         possible = [...possible, ...moves];
@@ -310,95 +308,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }
     return boardCopy;
   }
-  function castleMoves(
-    boardCopy: Cord[][],
-    pieceColor: string,
-    tile: Cord,
-    king: KingStore
-  ) {
-    //setting color variable
-    let side = castleCon[pieceColor as keyof typeof castleCon];
-    //Castle cannot occur if in check or if king has moved
-    if (king.check || !side.king) return [];
-    //moves to be returned
-    let moves = [];
-    //left rook hasnt moved yet
-    if (side.left) {
-      //both tiles must be empty
-      if (
-        boardCopy[tile.y][tile.x - 1].piece.name == "None" &&
-        boardCopy[tile.y][tile.x - 2].piece.name == "None"
-      ) {
-        //king not allowed to move through a check when moving double spaces, first checks for check
-        //in one move then two
-        let checkSearch = _.cloneDeep(boardCopy);
-        checkSearch = movePiece(
-          checkSearch[tile.y][tile.x - 1],
-          checkSearch,
-          checkSearch[tile.y][tile.x]
-        );
-        let check = isCheck(
-          checkSearch,
-          pieceColor,
-          checkSearch[tile.y][tile.x - 1]
-        );
-        if (!check) {
-          let checkSearch = _.cloneDeep(boardCopy);
-          checkSearch = movePiece(
-            checkSearch[tile.y][tile.x - 2],
-            checkSearch,
-            checkSearch[tile.y][tile.x]
-          );
-          check = isCheck(
-            checkSearch,
-            pieceColor,
-            checkSearch[tile.y][tile.x - 2]
-          );
-        }
-        //if both cases pass as not checking the king
-        !check && moves.push({ x: tile.x - 2, y: tile.y });
-      }
-    }
-    //right rook hasnt moved yet
-    if (side.right) {
-      //both tiles must be empty
-      if (
-        boardCopy[tile.y][tile.x + 1].piece.name == "None" &&
-        boardCopy[tile.y][tile.x + 2].piece.name == "None"
-      ) {
-        //king not allowed to move through a check when moving double spaces, first checks for check
-        //in one move then two
-        let checkSearch = _.cloneDeep(boardCopy);
-        checkSearch = movePiece(
-          checkSearch[tile.y][tile.x + 1],
-          checkSearch,
-          checkSearch[tile.y][tile.x]
-        );
-        let check = isCheck(
-          checkSearch,
-          pieceColor,
-          checkSearch[tile.y][tile.x + 1]
-        );
-        if (!check) {
-          let checkSearch = _.cloneDeep(boardCopy);
-          checkSearch = movePiece(
-            checkSearch[tile.y][tile.x + 2],
-            checkSearch,
-            checkSearch[tile.y][tile.x]
-          );
-          check = isCheck(
-            checkSearch,
-            pieceColor,
-            checkSearch[tile.y][tile.x + 2]
-          );
-        }
-        //if both cases pass as not checking the king
-        !check && moves.push({ x: tile.x + 2, y: tile.y });
-      }
-    }
-
-    return moves;
-  }
+ 
 
   async function sendMove(
     start: Cord | Move,
@@ -482,7 +392,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       makeNew();
     }
   }
-
 
   function formatHistory(moves: LastMove[]) {
     let moveHistory = [];
@@ -577,7 +486,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       )
     );
     getUserId();
-  }, []);  
+  }, []);
   useEffect(() => {
     let channel = supabase.channel("game_move");
 
@@ -607,7 +516,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       playSound(muted);
     }
   }, [sessionData]);
-  
 
   return (
     <>
