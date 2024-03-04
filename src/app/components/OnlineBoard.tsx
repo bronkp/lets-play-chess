@@ -49,6 +49,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   const [pawnToEnPass, setPawntoEnPass] = useState<null | Cord>();
   const [history, setHistory] = useState<String[]>();
   const [userColor, setUserColor] = useState("");
+  const [realBoard, setRealBoard] = useState<Cord[][]>();
   const [blkKing, setBlkKing] = useState<KingStore>({
     cords: new Cord("light", r.King, "black", 4, 0),
     check: false,
@@ -79,7 +80,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     let clickedIsHighlighted = tile.highlighted;
     let clickedPieceName = tile.piece.name;
     let clickedPieceColor = tile.pieceColor;
-    let turnColor = turn;
     let boardCopy: Cord[][] = _.cloneDeep(realBoard!);
     if (!clickedIsHighlighted) {
       if (clickedPieceName == "None") {
@@ -94,7 +94,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
         setRealBoard(boardCopy);
       }
     } else {
-      await handleMoveAttempt(tile, hiPiece, boardCopy);
+      await handleMoveAttempt(tile, hiPiece);
     }
   }
   async function sendUpgradeMove(key: string) {
@@ -106,7 +106,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
   async function handleMoveAttempt(
     tile: Cord,
     hiPiece: Cord,
-    boardCopy: Cord[][]
   ) {
     let isPawn = hiPiece.piece.name == "Pawn";
     let end = hiPiece.pieceColor == "white" ? 0 : 7;
@@ -434,7 +433,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     return check;
   }
 
-  const [realBoard, setRealBoard] = useState<Cord[][]>();
+  
   async function sendMove(
     start: Cord | Move,
     end: Cord | Move,
@@ -517,37 +516,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       makeNew();
     }
   }
-  useEffect(() => {
-    let board = getBoard();
-    setIsMobile(
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(
-        navigator.userAgent
-      )
-    );
-  }, []);
 
-  useEffect(() => {
-    let channel = supabase.channel("game_move");
-
-    channel
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "Sessions",
-          filter: "id=eq." + params.game_id,
-        },
-        (payload) => {
-          setSessionData(payload.new as SupaBoard);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase]);
 
   function formatHistory(moves: LastMove[]) {
     let moveHistory = [];
@@ -629,21 +598,50 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       setUserId(sessionId);
     }
   }
+  function preUpgradeVisual(board: Cord[][], start: Cord, end: Cord) {
+    board = simpleMove(board, start, end);
+    board = clearHighlights(board);
+    return board;
+  }
   useEffect(() => {
+    let board = getBoard();
+    setIsMobile(
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(
+        navigator.userAgent
+      )
+    );
     getUserId();
-  }, []);
-  //muted variable bundled and not updated when called
+  }, []);  
+  useEffect(() => {
+    let channel = supabase.channel("game_move");
+
+    channel
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "Sessions",
+          filter: "id=eq." + params.game_id,
+        },
+        (payload) => {
+          setSessionData(payload.new as SupaBoard);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase]);
+  //muted variable bundled and not updated when called so must be done in useEffect
   useEffect(() => {
     if (sessionData) {
       handleIncomingMove(sessionData);
       playSound(muted);
     }
   }, [sessionData]);
-  function preUpgradeVisual(board: Cord[][], start: Cord, end: Cord) {
-    board = simpleMove(board, start, end);
-    board = clearHighlights(board);
-    return board;
-  }
+  
 
   return (
     <>
