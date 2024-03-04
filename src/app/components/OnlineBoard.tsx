@@ -192,21 +192,21 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     possible: Move[],
     boardCopy: Cord[][],
     king: KingStore,
-    tile: Cord
+    start: Cord
   ) {
     //filters out moves that would put own king in check
     possible = possible.filter((move: Move) => {
       //lodash deep copy cause no native way to copy object with methods
       let copy = _.cloneDeep(boardCopy!);
-
-      copy = movePiece(copy[move.y][move.x], copy, tile);
+      let end = copy[move.y][move.x]
+      copy = simpleMove( copy, start,end);
 
       //if not in check, checks if the piece being moved is a king because the cordinate
       //will change for each possible move
       return !isCheck(
         copy,
-        tile.pieceColor,
-        tile.piece.name == "King" ? copy[move.y][move.x] : king.cords
+        start.pieceColor,
+        start.piece.name == "King" ? end : king.cords
       );
     });
 
@@ -216,16 +216,8 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     });
     return boardCopy;
   }
-  //tile:position to be moved to
-  //moved: piece to be moved
-  function movePiece(tile: Cord, boardCopy: Cord[][], moved: Cord) {
-    boardCopy[tile.y][tile.x].piece = moved!.piece;
-    boardCopy[tile.y][tile.x].pieceColor = moved!.pieceColor;
-    boardCopy[moved!.y][moved!.x].piece = r.None;
-    boardCopy[moved!.y][moved!.x].pieceColor = "None";
-
-    return boardCopy;
-  }
+  
+  
 
   function makeNew() {
     setWhtKing({
@@ -519,6 +511,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
 
   return (
     <>
+    {/* <button onClick={()=>sendMove({x:4,y:0},{x:6,y:0},null)}>send Move</button> */}
       {!gameStarted && (
         <SharePopUp
           gameIsReady={gameReady}
