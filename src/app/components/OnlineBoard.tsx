@@ -19,6 +19,7 @@ import { simpleMove } from "../../../chessFunctions/simpleMove";
 import SharePopUp from "./SharePopUp";
 import { SupaBoard } from "../../../types/types";
 import { FaVolumeMute, FaVolumeUp } from "react-icons/fa";
+import { isCheck } from "../../../chessFunctions/isCheck";
 const snd = new Audio("/place-piece.mp3");
 
 type KingStore = {
@@ -398,42 +399,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
 
     return moves;
   }
-  function isCheck(boardCopy: Cord[][], pieceColor: string, king: Cord) {
-    let queenMoves = r.Queen.getRules();
-    let moves = queenMoves(pieceColor, king.x, king.y, boardCopy);
-    let knightMoves = r.Knight.getRules();
-    moves = [...moves, ...knightMoves(pieceColor, king.x, king.y, boardCopy)];
-    let check = false;
-    for (let i = 0; i < moves.length; i++) {
-      let search = boardCopy[moves[i].y][moves[i].x] as Cord;
-      //if piece isnt blank and of the opposite color
-      if (search.piece.name != "None" && search.pieceColor != pieceColor) {
-        //gets enemy moves
-        let getMoves =
-          r[
-            boardCopy![search.y][search.x].piece.name as keyof typeof r
-          ].getRules();
-        let enemyMoves = getMoves(
-          search.pieceColor,
-          search.x,
-          search.y,
-          boardCopy
-        );
 
-        //checks if piece has a move to take the king and returns true or false
-        check = enemyMoves.some((x: Move) => {
-          if (x.x == king.x && x.y == king.y) {
-            return true;
-          }
-          return false;
-        });
-      }
-      if (check == true) break;
-    }
-    return check;
-  }
-
-  
   async function sendMove(
     start: Cord | Move,
     end: Cord | Move,
