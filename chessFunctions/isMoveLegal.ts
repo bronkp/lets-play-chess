@@ -6,6 +6,7 @@ import { Move } from "../types/types";
 import { forceComplexMove } from "./forceComplexMove";
 import { simpleMove } from "./simpleMove";
 import { castleMoves } from "./castleMoves";
+import { isEnPassPossible } from "./isEnPassPossible";
 type MoveCord = {
   x: number;
   y: number;
@@ -109,18 +110,7 @@ export function isMoveLegal(
   return false;
 }
 
-function isEnPassPossible(start: Cord, pawnToEnPassant: Cord) {
-  if (
-    start.piece.name == "Pawn" &&
-    pawnToEnPassant &&
-    pawnToEnPassant.pieceColor != start.pieceColor &&
-    start.y == (start.pieceColor == "white" ? 3 : 4) &&
-    (start.x == pawnToEnPassant.x - 1 || start.x == pawnToEnPassant.x + 1)
-  ) {
-    return true;
-  }
-  return false;
-}
+
 
 
 

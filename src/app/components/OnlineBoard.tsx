@@ -22,6 +22,7 @@ import { FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 import { isCheck } from "../../../chessFunctions/isCheck";
 import { castleMoves } from "../../../chessFunctions/castleMoves";
 import { makeBoard } from "../../../chessFunctions/makeBoard";
+import { isEnPassPossible } from "../../../chessFunctions/isEnPassPossible";
 const snd = new Audio("/place-piece.mp3");
 
 type BoardProps = {
@@ -63,7 +64,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     Bishop: <FaChessBishop />,
     Rook: <FaChessRook />,
   };
-  //pass realboard and hipiece as work around for recieving online moves
   async function handleClick(realBoard: Cord[][], tile: Cord, hiPiece: Cord) {
     if (pawnToUpgrade != null) {
       return;
@@ -135,7 +135,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       ].getRules();
     let possible = getMoves(tile.pieceColor, tile.x, tile.y, boardCopy);
     //checking en passant possibility
-    if (isEnPassPossible({ ...tile } as Cord)) {
+    if (isEnPassPossible({ ...tile } as Cord,pawnToEnPass)) {
       //adds en passant to move list, changing y based on color
       possible.push({
         x: pawnToEnPass?.x,
@@ -163,19 +163,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     );
     return boardCopy;
   }
-  //checks if en passant is possible
-  function isEnPassPossible(tile: Cord) {
-    if (
-      tile.piece.name == "Pawn" &&
-      pawnToEnPass &&
-      pawnToEnPass.pieceColor != tile.pieceColor &&
-      tile.y == (tile.pieceColor == "white" ? 3 : 4) &&
-      (tile.x == pawnToEnPass.x - 1 || tile.x == pawnToEnPass.x + 1)
-    ) {
-      return true;
-    }
-    return false;
-  }
+ 
   //Goes through each possible move the checked kings pieces could make to see if any
   //moves removes the check. Returns a boolean of if king is mated
   function highlightPieces(
