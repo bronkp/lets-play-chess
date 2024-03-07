@@ -21,6 +21,7 @@ import { KingStore, MoveCord, SupaBoard, Move } from '../../../types/types';
 import { FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 import { isCheck } from "../../../chessFunctions/isCheck";
 import { castleMoves } from "../../../chessFunctions/castleMoves";
+import { makeBoard } from "../../../chessFunctions/makeBoard";
 const snd = new Audio("/place-piece.mp3");
 
 type BoardProps = {
@@ -222,61 +223,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       white: { left: true, king: true, right: true },
     });
     setPawnToUpgrade(null);
-    let newBoard = [];
-    let row = [];
-    let y = 0;
-    let order = [
-      r.Rook,
-      r.Knight,
-      r.Bishop,
-      r.Queen,
-      r.King,
-      r.Bishop,
-      r.Knight,
-      r.Rook,
-    ];
-    for (let x = 0; x < 8; x++) {
-      row.push(
-        new Cord((x + y) % 2 == 0 ? "light" : "dark", order[x], "black", x, y)
-      );
-    }
-    newBoard.push(row);
-    row = [];
-    y++;
-    for (let x = 0; x < 8; x++) {
-      row.push(
-        new Cord((x + y) % 2 == 0 ? "light" : "dark", r.Pawn, "black", x, y)
-      );
-    }
-    newBoard.push(row);
-    row = [];
-    y++;
-    for (let i = 0; i < 4; i++) {
-      for (let x = 0; x < 8; x++) {
-        row.push(
-          new Cord((x + y) % 2 == 0 ? "light" : "dark", r.None, "None", x, y)
-        );
-      }
-      newBoard.push(row);
-      row = [];
-      y++;
-    }
-    for (let x = 0; x < 8; x++) {
-      row.push(
-        new Cord((x + y) % 2 == 0 ? "light" : "dark", r.Pawn, "white", x, y)
-      );
-    }
-    newBoard.push(row);
-    row = [];
-    y++;
-    for (let x = 0; x < 8; x++) {
-      row.push(
-        new Cord((x + y) % 2 == 0 ? "light" : "dark", order[x], "white", x, y)
-      );
-    }
-    newBoard.push(row);
-    row = [];
-    y++;
+    let newBoard = makeBoard()
     setRealBoard(newBoard);
   }
   function clearHighlights(boardCopy: Cord[][]) {
