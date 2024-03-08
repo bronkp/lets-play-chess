@@ -72,7 +72,7 @@ const SharePopUp: React.FC<SharePopUpProps> = ({
           {gameIsReady ? "Ready to start" : "Waiting for opponent to join..."}
         </p>
         {role == "owner" && <h1>Send Link To Opponent:</h1>}
-        {role == "owner" && <p>/game/{link}</p>}
+        {role == "owner" && <p>react-chess-smoky.vercel.app/game/{link}</p>}
       </div>
     </>
   );
