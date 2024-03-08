@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Overpass } from "next/font/google";
 import "./globals.css";
+import Head from "next/head";
 
 
 const inter = Overpass({ subsets: ["latin"] });
@@ -17,11 +18,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en"  prefix="og: https://ogp.me/ns#">
-   
+   <Head>
+   <meta property="og:image" content="https://imgur.com/a/D6x2IQy" />
+   </Head>
+ 
 
-   <meta name="viewport" content="width=1000; " />
-   <meta property="og:type" content="website"/>
-   <meta property="og:image" content="https://imgur.com/5gmADj3"/>
         {/* <IconContext.Provider value={{ style: { height:"3em",width:"3em" } }}> */}
 
       <body className={inter.className}>{children}</body>
