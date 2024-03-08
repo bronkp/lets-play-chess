@@ -25,11 +25,14 @@ export async function GET(req: NextRequest) {
   );
   const authHeader = req.headers.get('authorization');
   if(authHeader!=process.env.CRON_SECRET ){
+    console.log('invalid key')
   return Response.json({ error: "incorrect key" });
   }
+  
   let yesterday = new Date(
     new Date().setDate(new Date().getDate() - 1)
-  ).toISOString();
+    ).toISOString();
+    console.log('valid key',yesterday)
   let data = await supabase
     .from("Sessions")
     .delete()
