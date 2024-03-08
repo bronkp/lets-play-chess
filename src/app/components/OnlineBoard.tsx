@@ -23,8 +23,8 @@ import { isCheck } from "../../../chessFunctions/isCheck";
 import { castleMoves } from "../../../chessFunctions/castleMoves";
 import { makeBoard } from "../../../chessFunctions/makeBoard";
 import { isEnPassPossible } from "../../../chessFunctions/isEnPassPossible";
-let snd: HTMLAudioElement
-if(typeof Audio != "undefined") {
+let snd: HTMLAudioElement;
+if (typeof Audio != "undefined") {
   // Browser-only code
   snd = new Audio("/place-piece.mp3");
 }
@@ -394,33 +394,49 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     return board;
   }
 
-  function tileBackgroundColor(tile:Cord){
-    let red = "rgb(255, 82, 90)"
-    let blue = "rgb(101, 197, 252)"
-    let lastMove = "rgb(194, 242, 226)"
-    let upgradeColor = "rgb(153, 255, 89)"
-    if(pawnToUpgrade?.end.x == tile.x && pawnToUpgrade.end.y == tile.y){
-      return upgradeColor
+  function tileBackgroundColor(tile: Cord) {
+    let red = "rgb(255, 82, 90)";
+    let blue = "rgb(101, 197, 252)";
+    let lastMove = "rgb(194, 242, 226)";
+    let upgradeColor = "rgb(153, 255, 89)";
+    if (pawnToUpgrade?.end.x == tile.x && pawnToUpgrade.end.y == tile.y) {
+      return upgradeColor;
     }
-    if((whtKing.check &&tile.x == whtKing.cords.x && tile.y == whtKing.cords.y)){
-      return red
+    if (
+      whtKing.check &&
+      tile.x == whtKing.cords.x &&
+      tile.y == whtKing.cords.y
+    ) {
+      return red;
     }
-    if((blkKing.check && tile.x == blkKing.cords.x &&tile.y == blkKing.cords.y)){
-      return red
+    if (
+      blkKing.check &&
+      tile.x == blkKing.cords.x &&
+      tile.y == blkKing.cords.y
+    ) {
+      return red;
     }
-    if(tile.highlighted) {
-      return blue
-    }                       
-    if(tile.x == lastMoveCords?.start.x &&tile.y == lastMoveCords?.start.y&&hiPiece == null){
-      return lastMove
+    if (tile.highlighted) {
+      return blue;
     }
-    if(tile.x == lastMoveCords?.end.x &&tile.y == lastMoveCords?.end.y && hiPiece == null){
-      return lastMove
-    }             
-    if(tile.tileColor == "light")   {
-      return "rgb(255, 206, 153)"
-    }              
-    return "rgb(77, 48, 17)"                              
+    if (
+      tile.x == lastMoveCords?.start.x &&
+      tile.y == lastMoveCords?.start.y &&
+      hiPiece == null
+    ) {
+      return lastMove;
+    }
+    if (
+      tile.x == lastMoveCords?.end.x &&
+      tile.y == lastMoveCords?.end.y &&
+      hiPiece == null
+    ) {
+      return lastMove;
+    }
+    if (tile.tileColor == "light") {
+      return "rgb(255, 206, 153)";
+    }
+    return "rgb(77, 48, 17)";
   }
 
   useEffect(() => {
@@ -561,7 +577,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
                       style={{
                         color: tile.pieceColor,
                         cursor: "pointer",
-                        backgroundColor: tileBackgroundColor(tile)
+                        backgroundColor: tileBackgroundColor(tile),
                       }}
                     >
                       {tile.piece.name != "None" &&

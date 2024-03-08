@@ -20,23 +20,27 @@ type Move = {
   x: number;
   y: number;
 };
-type LastMove= {
-  start:Move;
-  end:Move;
-}
+type LastMove = {
+  start: Move;
+  end: Move;
+};
 type BoardProps = {
   lastMove?: LastMove;
-  online?:Boolean;
-  handleOnlineMove:Function;
+  online?: Boolean;
+  handleOnlineMove: Function;
 };
-const Board: React.FC<BoardProps> = ({ lastMove,online,handleOnlineMove}) => {
+const Board: React.FC<BoardProps> = ({
+  lastMove,
+  online,
+  handleOnlineMove,
+}) => {
   const [realBoard, setRealBoard] = useState<Cord[][]>();
   const [hiPiece, setHiPiece] = useState<Cord | null>();
   const [turnState, setTurnState] = useState(true);
   const [pawnToUpgrade, setPawnToUpgrade] = useState<Cord | null>();
   const [pawnToEnPass, setPawntoEnPass] = useState<Cord | null>();
   const [history, setHistory] = useState<String[]>();
-  const [lastLocalMove,setLastLocalMove] = useState<LastMove>()
+  const [lastLocalMove, setLastLocalMove] = useState<LastMove>();
   const [blkKing, setBlkKing] = useState<KingStore>({
     cords: new Cord("light", r.King, "black", 4, 0),
     check: false,
@@ -58,7 +62,12 @@ const Board: React.FC<BoardProps> = ({ lastMove,online,handleOnlineMove}) => {
     Knight: <FaChessKnight />,
   };
   //pass realboard and hipiece as work around for recieving online moves
-  function handleClick(realBoard: Cord[][], tile: Cord, hiPiece: Cord,upload?:Boolean) {
+  function handleClick(
+    realBoard: Cord[][],
+    tile: Cord,
+    hiPiece: Cord,
+    upload?: Boolean
+  ) {
     if (pawnToUpgrade != null) {
       return;
     }
@@ -80,9 +89,12 @@ const Board: React.FC<BoardProps> = ({ lastMove,online,handleOnlineMove}) => {
       }
     } else {
       handleHighlightedClick(boardCopy, tile, hiPiece);
-      upload&&handleOnlineMove(tile,hiPiece)
-      upload&&setLastLocalMove({end:{"x":tile.x,"y":tile.y},start:{"x":hiPiece.x,"y":hiPiece.y}})
-      
+      upload && handleOnlineMove(tile, hiPiece);
+      upload &&
+        setLastLocalMove({
+          end: { x: tile.x, y: tile.y },
+          start: { x: hiPiece.x, y: hiPiece.y },
+        });
     }
   }
   function handleHighlightedClick(
@@ -605,7 +617,7 @@ const Board: React.FC<BoardProps> = ({ lastMove,online,handleOnlineMove}) => {
     }
     return check;
   }
-  function handleEnemyMove(move: { start: any; end: any; }) {
+  function handleEnemyMove(move: { start: any; end: any }) {
     console.log(move);
     let boardCopy = _.cloneDeep(realBoard);
     let start = move.start;
@@ -614,38 +626,27 @@ const Board: React.FC<BoardProps> = ({ lastMove,online,handleOnlineMove}) => {
     console.log(boardCopy);
     handleClick(boardCopy, end, boardCopy[start.y][start.x]);
   }
- 
-  useEffect(()=>{
-    console.log("last",JSON.stringify(lastLocalMove),JSON.stringify(lastMove))
-    if(lastMove&&realBoard){
-      JSON.stringify(lastLocalMove)!=JSON.stringify(lastMove)&&handleEnemyMove(lastMove)
+
+  useEffect(() => {
+    console.log(
+      "last",
+      JSON.stringify(lastLocalMove),
+      JSON.stringify(lastMove)
+    );
+    if (lastMove && realBoard) {
+      JSON.stringify(lastLocalMove) != JSON.stringify(lastMove) &&
+        handleEnemyMove(lastMove);
     }
-  },[lastMove])
+  }, [lastMove]);
   useEffect(() => {
     makeNew();
   }, []);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
   return (
     <>
-      <button onClick={() => handleOnlineMove&&handleOnlineMove(1,2)}>Online Move</button>
+      <button onClick={() => handleOnlineMove && handleOnlineMove(1, 2)}>
+        Online Move
+      </button>
       <div className={styles["button-container"]}>
         <div>
           {turnState ? "White's" : "Black's"} Turn {debug && "* DEBUG"}
@@ -700,7 +701,7 @@ const Board: React.FC<BoardProps> = ({ lastMove,online,handleOnlineMove}) => {
               {row.map((tile: Cord, index) => (
                 <div
                   key={index}
-                  onClick={() => handleClick(realBoard, tile, hiPiece!,online)}
+                  onClick={() => handleClick(realBoard, tile, hiPiece!, online)}
                   className={styles.tile}
                   style={{
                     color: tile.pieceColor,
