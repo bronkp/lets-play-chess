@@ -17,7 +17,7 @@ import { supabase } from "../../../supa/client";
 import { buildCurrentBoard } from "../../../chessFunctions/buildCurrentBoard";
 import { simpleMove } from "../../../chessFunctions/simpleMove";
 import SharePopUp from "./SharePopUp";
-import { KingStore, MoveCord, SupaBoard, Move } from '../../../types/types';
+import { KingStore, MoveCord, SupaBoard, Move } from "../../../types/types";
 import { FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 import { isCheck } from "../../../chessFunctions/isCheck";
 import { castleMoves } from "../../../chessFunctions/castleMoves";
@@ -119,7 +119,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       !valid && setTurn(turn);
     }
   }
-  //TODO convert to using get possible moves global function
   //highlights during click event different function than highlighting board given
   function handleHighlights(boardCopy: Cord[][], tile: Cord) {
     let clickedRowIndex = tile.y;
@@ -135,7 +134,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       ].getRules();
     let possible = getMoves(tile.pieceColor, tile.x, tile.y, boardCopy);
     //checking en passant possibility
-    if (isEnPassPossible({ ...tile } as Cord,pawnToEnPass)) {
+    if (isEnPassPossible({ ...tile } as Cord, pawnToEnPass)) {
       //adds en passant to move list, changing y based on color
       possible.push({
         x: pawnToEnPass?.x,
@@ -147,7 +146,8 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
         boardCopy,
         tile.pieceColor,
         tile,
-        tile.pieceColor == "white" ? whtKing : blkKing,castleCon
+        tile.pieceColor == "white" ? whtKing : blkKing,
+        castleCon
       );
       if (moves) {
         possible = [...possible, ...moves];
@@ -163,7 +163,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     );
     return boardCopy;
   }
- 
   //Goes through each possible move the checked kings pieces could make to see if any
   //moves removes the check. Returns a boolean of if king is mated
   function highlightPieces(
@@ -176,8 +175,8 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     possible = possible.filter((move: MoveCord) => {
       //lodash deep copy cause no native way to copy object with methods
       let copy = _.cloneDeep(boardCopy!);
-      let end = copy[move.y][move.x]
-      copy = simpleMove( copy, start,end);
+      let end = copy[move.y][move.x];
+      copy = simpleMove(copy, start, end);
 
       //if not in check, checks if the piece being moved is a king because the cordinate
       //will change for each possible move
@@ -194,8 +193,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     });
     return boardCopy;
   }
-  
-  
 
   function makeNew() {
     setWhtKing({
@@ -211,7 +208,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       white: { left: true, king: true, right: true },
     });
     setPawnToUpgrade(null);
-    let newBoard = makeBoard()
+    let newBoard = makeBoard();
     setRealBoard(newBoard);
   }
   function clearHighlights(boardCopy: Cord[][]) {
@@ -224,7 +221,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }
     return boardCopy;
   }
- 
 
   async function sendMove(
     start: Cord | MoveCord,
@@ -378,7 +374,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       if (data.error) {
         console.log(data.error, "error");
         sessionStorage.setItem("spectating", "true");
-        //TODO: SET ERROR RESULT
       } else {
         sessionStorage.setItem("session_id", data.id);
         sessionStorage.setItem("user_color", data.color);
@@ -394,6 +389,36 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     board = clearHighlights(board);
     return board;
   }
+
+  function tileBackgroundColor(tile:Cord){
+    let red = "rgb(255, 82, 90)"
+    let blue = "rgb(101, 197, 252)"
+    let lastMove = "rgb(194, 242, 226)"
+    let upgradeColor = "rgb(153, 255, 89)"
+    if(pawnToUpgrade?.end.x == tile.x && pawnToUpgrade.end.y == tile.y){
+      return upgradeColor
+    }
+    if((whtKing.check &&tile.x == whtKing.cords.x && tile.y == whtKing.cords.y)){
+      return red
+    }
+    if((blkKing.check && tile.x == blkKing.cords.x &&tile.y == blkKing.cords.y)){
+      return red
+    }
+    if(tile.highlighted) {
+      return blue
+    }                       
+    if(tile.x == lastMoveCords?.start.x &&tile.y == lastMoveCords?.start.y&&hiPiece == null){
+      return lastMove
+    }
+    if(tile.x == lastMoveCords?.end.x &&tile.y == lastMoveCords?.end.y && hiPiece == null){
+      return lastMove
+    }             
+    if(tile.tileColor == "light")   {
+      return "rgb(255, 206, 153)"
+    }              
+    return "rgb(77, 48, 17)"                              
+  }
+
   useEffect(() => {
     let board = getBoard();
     setIsMobile(
@@ -435,7 +460,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
 
   return (
     <>
-    {/* <button onClick={()=>sendMove({x:4,y:0},{x:6,y:0},null)}>send Move</button> */}
+      {/* <button onClick={()=>sendMove({x:4,y:0},{x:6,y:0},null)}>send Move</button> */}
       {!gameStarted && (
         <SharePopUp
           gameIsReady={gameReady}
@@ -532,28 +557,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
                       style={{
                         color: tile.pieceColor,
                         cursor: "pointer",
-                        backgroundColor:
-                          pawnToUpgrade?.end.x == tile.x &&
-                          pawnToUpgrade.end.y == tile.y
-                            ? "rgb(153, 255, 89)"
-                            : (whtKing.check &&
-                                tile.x == whtKing.cords.x &&
-                                tile.y == whtKing.cords.y) ||
-                              (blkKing.check &&
-                                tile.x == blkKing.cords.x &&
-                                tile.y == blkKing.cords.y)
-                            ? "rgb(255, 82, 90)"
-                            : tile.highlighted
-                            ? "rgb(101, 197, 252)"
-                            : ((tile.x == lastMoveCords?.start.x &&
-                                tile.y == lastMoveCords?.start.y) ||
-                                (tile.x == lastMoveCords?.end.x &&
-                                  tile.y == lastMoveCords?.end.y)) &&
-                              hiPiece == null
-                            ? "rgb(194, 242, 226)"
-                            : tile.tileColor == "light"
-                            ? "rgb(255, 206, 153)"
-                            : "rgb(77, 48, 17)",
+                        backgroundColor: tileBackgroundColor(tile)
                       }}
                     >
                       {tile.piece.name != "None" &&
