@@ -9,7 +9,7 @@ const inter = Overpass({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "lets-play-chess",
   description: "Play chess with friends",
-  openGraph:{images:["/chessGame.PNG"]}
+  openGraph:{images:["./chessGame.PNG"]}
 };
 
 export default function RootLayout({
