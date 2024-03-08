@@ -23,7 +23,11 @@ import { isCheck } from "../../../chessFunctions/isCheck";
 import { castleMoves } from "../../../chessFunctions/castleMoves";
 import { makeBoard } from "../../../chessFunctions/makeBoard";
 import { isEnPassPossible } from "../../../chessFunctions/isEnPassPossible";
-const snd = new Audio("/place-piece.mp3");
+let snd: HTMLAudioElement
+if(typeof Audio != "undefined") {
+  // Browser-only code
+  snd = new Audio("/place-piece.mp3");
+}
 
 type BoardProps = {
   params: any;
