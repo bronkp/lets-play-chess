@@ -20,6 +20,8 @@ export default function RootLayout({
     <html lang="en"  prefix="og: https://ogp.me/ns#">
    <Head>
    <meta property="og:image" content="https://imgur.com/a/D6x2IQy" />
+   <meta property="og:image:width" content="500" />
+<meta property="og:image:height" content="500" />
    </Head>
  
 
