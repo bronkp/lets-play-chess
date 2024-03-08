@@ -9,6 +9,7 @@ const inter = Overpass({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "lets-play-chess",
   description: "Play chess with friends",
+  metadataBase: new URL("https://react-chess-smoky.vercel.app/"),
   openGraph: {
     images: [
       { url: ogImage.src, width: ogImage.width, height: ogImage.height },
