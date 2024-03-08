@@ -15,7 +15,7 @@ const CreateBoard: React.FC = () => {
   }
   return (
     <div className={styles["create-container"]}>
-  <h1><FaChessPawn color="black" fontSize="2em"/>Easy Chess<FaChessPawn color="black" fontSize="2em"/></h1>
+  <h1><FaChessPawn color="black" fontSize="1.5em"/>Easy Chess<FaChessPawn color="black" fontSize="1.5em"/></h1>
       
       <button
       disabled={loading}
