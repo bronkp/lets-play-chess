@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     }
   );
   const authHeader = req.headers.get('authorization');
-  if(authHeader!=process.env.CRON_SECRET ){
+  if(authHeader!=`Bearer ${process.env.CRON_SECRET}`){
     console.log('invalid key')
   return Response.json({ error: "incorrect key" });
   }
