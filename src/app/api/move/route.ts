@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  return Response.json({ message: board });
+  return Response.json({ message: "success" });
 
   //let data = await supabase.from("Sessions").update({last_move:JSON.parse(move!)}).eq("id",game_id)
   let user = await supabase.from("Sessions");
