@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   let move = JSON.parse(body.move);
   let user_id = body.userId;
   let entries = await supabase.from("Sessions").select().eq("id", game_id);
-  if(entries.data?.length == 0){
+  if(!entries.data){
     return Response.json({ error: "No game of matching id found." })
   }
   let game_data = entries.data![0];
