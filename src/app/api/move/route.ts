@@ -41,6 +41,9 @@ export async function POST(req: NextRequest) {
   let move = JSON.parse(body.move);
   let user_id = body.userId;
   let entries = await supabase.from("Sessions").select().eq("id", game_id);
+  if(entries.data?.length == 0){
+    return Response.json({ error: "No game of matching id found." })
+  }
   let game_data = entries.data![0];
   if(!game_data.game_ready){
     return Response.json({ error: "Missing a player! Wait till they join" });
