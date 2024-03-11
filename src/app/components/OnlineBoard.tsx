@@ -235,7 +235,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       userId: userId,
       game_id: params.game_id,
       pawnUpgrade: upgrade,
-      turn: "white",
       move: JSON.stringify({
         end: {
           x: end.x,
