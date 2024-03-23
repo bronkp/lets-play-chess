@@ -505,9 +505,9 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       <div className={styles["wide-container"]}>
         <h1>
           {checkMate
-            ? "Game Over:" + checkMate == "white"
+            ? ( checkMate == "white"
               ? "Black "
-              : "White " + "Has Won"
+              : "White ") + "Has Won"
             : sessionStorage.getItem("spectating") == "true"
             ? "Spectating"
             : userColor == turn
