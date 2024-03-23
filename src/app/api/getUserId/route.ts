@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   let color;
   let role;
   let data = await supabase.from("Players").select().eq("id", game_id);
-  if(!data.data){
+  if(!data.data || data.data.length == 0){
   return Response.json({ error: "No game found" });
 
   }

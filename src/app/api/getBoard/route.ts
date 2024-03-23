@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
   const data:GamePayLoad = await req.json()  
   let game_id = data!.game_id
   let entries = await supabase.from("Sessions").select().eq("id", game_id);
-  if(!entries.data){
+  console.log(entries,"yoyo")
+  if(!entries.data || entries.data.length == 0){
     return Response.json({error:"No board found"})
   }
   let game_data = entries.data![0];
