@@ -488,7 +488,6 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
 const spectating = typeof window !== 'undefined'?sessionStorage.getItem("spectating"):"true"
   return (
     <>{fatalError?(<>... no game found</>):(<>
-      {/* <button onClick={()=>sendMove({x:4,y:0},{x:6,y:0},null)}>send Move</button> */}
       {!gameStarted && (
         <SharePopUp
           gameIsReady={gameReady}
