@@ -28,6 +28,10 @@ export async function POST(req: NextRequest) {
   let color;
   let role;
   let data = await supabase.from("Players").select().eq("id", game_id);
+  if(!data.data){
+  return Response.json({ error: "No game found" });
+
+  }
   let game = data.data![0];
   let isOwner = false
   if (game.owner && game.guest) {

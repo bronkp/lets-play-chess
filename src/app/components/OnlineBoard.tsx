@@ -33,6 +33,7 @@ type BoardProps = {
   params: any;
 };
 const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
+  const [fatalError, setFatalError] = useState(false);
   const [lastMoveCords, setLastMoveCords] = useState<Move>();
   const [isMobile, setIsMobile] = useState(false);
   const [sessionData, setSessionData] = useState<SupaBoard>();
@@ -278,6 +279,9 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
     }).then((body) => {
       return body.json();
     });
+    if(board.error){
+      return
+    }
     if (board.game_ready) {
       setGameReady(true);
     }
@@ -375,8 +379,12 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
         return data.json();
       });
       if (data.error) {
-        console.log(data.error, "error");
-        sessionStorage.setItem("spectating", "true");
+        console.log("Error: ", data.error);
+        if ((data.error = "No game found")) {
+          setFatalError(true);
+        } else {
+          sessionStorage.setItem("spectating", "true");
+        }
       } else {
         sessionStorage.setItem("session_id", data.id);
         sessionStorage.setItem("user_color", data.color);
@@ -476,9 +484,10 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       playSound(muted);
     }
   }, [sessionData]);
-
+//so no error when node is trying to do stuff from the server
+const spectating = typeof window !== 'undefined'?sessionStorage.getItem("spectating"):"true"
   return (
-    <>
+    <>{fatalError?(<>... no game found</>):(<>
       {/* <button onClick={()=>sendMove({x:4,y:0},{x:6,y:0},null)}>send Move</button> */}
       {!gameStarted && (
         <SharePopUp
@@ -486,7 +495,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
           setUserColor={setUserColor}
           userColor={userColor}
           link={params.game_id}
-          role={sessionStorage.getItem("role")!}
+          role={typeof window !== 'undefined'?sessionStorage.getItem("role")!:""}
           userId={userId}
         />
       )}
@@ -505,10 +514,8 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
       <div className={styles["wide-container"]}>
         <h1>
           {checkMate
-            ? ( checkMate == "white"
-              ? "Black "
-              : "White ") + "Has Won"
-            : sessionStorage.getItem("spectating") == "true"
+            ? (checkMate == "white" ? "Black " : "White ") + "Has Won"
+            : spectating
             ? "Spectating"
             : userColor == turn
             ? "Your Turn"
@@ -620,7 +627,7 @@ const OnlineBoard: React.FC<BoardProps> = ({ params }) => {
             ))}
           </div>
         </div>
-      </div>
+      </div></>)}
     </>
   );
 };
